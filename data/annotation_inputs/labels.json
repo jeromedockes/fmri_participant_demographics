@@ -1,0 +1,22 @@
+[
+    {
+        "shortcut_key": "t",
+        "suffix_key": "t",
+        "text": "Total N participants"
+    },
+    {
+        "shortcut_key": "s",
+        "suffix_key": "s",
+        "text": "Subgroup N participants"
+    },
+    {
+        "shortcut_key": "n",
+        "suffix_key": "n",
+        "text": "N/A N participants (Not Applicable)"
+    },
+    {
+        "shortcut_key": "i",
+        "suffix_key": "i",
+        "text": "Implicit total N participants"
+    }
+]
