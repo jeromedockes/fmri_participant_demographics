@@ -5,7 +5,7 @@ text_number.10: hundred_text_number | dozen_text_number | unit_text_number
 
 hundred_text_number.10: hundred_part [dozen_part | unit_part]
 
-hundred_part.10: (dozen_text_number | unit_text_number) /hundreds?/
+hundred_part.10: (dozen_text_number | unit_text_number) "hundred"
 
 dozen_part.10: ["and"] dozen_text_number
 

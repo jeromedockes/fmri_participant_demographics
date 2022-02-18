@@ -1,6 +1,6 @@
 from pathlib import Path
 import re
-from typing import List
+from typing import List, Tuple
 
 from lark import Lark, Transformer
 
@@ -17,17 +17,18 @@ def _get_parser() -> Lark:
 
 class ParticipantsTransformer(Transformer):
     def INT(self, n):
-        return int(n)
+        return int(n.value), n.start_pos, n.end_pos
 
     def digit_number(self, n):
-        return int(n[0])
+        return dict(zip(("value", "start_pos", "end_pos"), n[0]))
 
     def UNIT_NAME(self, n):
-        return (
+        value = (
             "zero one two three four five six seven eight nine".split().index(
                 str(n)
             )
         )
+        return value, n.start_pos, n.end_pos
 
     def unit_text_number(self, n):
         return n[0]
@@ -36,37 +37,46 @@ class ParticipantsTransformer(Transformer):
         return n[0]
 
     def DOZEN_NAME(self, n):
-        return (
+        value = (
             "zero ten twenty thirty fourty fifty sixty "
             "seventy eighty ninety".split().index(str(n))
         ) * 10
+        return value, n.start_pos, n.end_pos
 
     def TEEN_NAME(self, n):
-        return (
+        value = (
             "ten eleven twelve thirteen fourteen fifteen sixteen "
             "seventeen eighteen nineteen".split().index(str(n)) + 10
         )
+        return value, n.start_pos, n.end_pos
 
     def dozen_text_number(self, n):
-        return sum(p for p in n if p is not None)
+        value = sum(p[0] for p in n if p is not None)
+        start = min(p[1] for p in n if p is not None)
+        end = max(p[2] for p in n if p is not None)
+        return value, start, end
 
     def dozen_part(self, n):
         return n[0]
 
     def hundred_part(self, n):
-        return 100 * n[0]
+        value = 100 * n[0][0]
+        return value, n[0][1], n[0][2]
 
     def hundred_text_number(self, n):
-        return sum(p for p in n if p is not None)
+        value = sum(p[0] for p in n if p is not None)
+        start = min(p[1] for p in n if p is not None)
+        end = max(p[2] for p in n if p is not None)
+        return value, start, end
 
     def text_number(self, n):
-        return n[0]
+        return dict(zip(("value", "start_pos", "end_pos"), n[0]))
 
     def participants_desc(self, desc):
-        return desc[-1]
+        return dict(zip(("value", "start_pos", "end_pos"), desc[-1]))
 
     def PARTICIPANTS_NAME(self, name):
-        return str(name)
+        return name.value, name.start_pos, name.end_pos
 
     def participants_inline(self, part):
         return {"n_participants": part[1], "participants_name": part[2]}
@@ -86,20 +96,61 @@ class Extractor:
         self._parser = _get_parser()
         self._transformer = ParticipantsTransformer()
 
-    def extract(self, text):
+    def extract_from_snippet(self, text):
         tree = self._parser.parse(text.lower())
         transformed = self._transformer.transform(tree)
         if hasattr(transformed, "children"):
-            return transformed.children[0]
-        return transformed
+            children = sorted(
+                transformed.children,
+                key=lambda c: (
+                    -c["n_participants"]["end_pos"],
+                    c["n_participants"]["start_pos"],
+                ),
+            )
+            result = children[0]
+        else:
+            result = transformed
+        start_pos = min([c["start_pos"] for c in result.values()])
+        end_pos = max([c["end_pos"] for c in result.values()])
+        result.update({"start_pos": start_pos, "end_pos": end_pos})
+        return result
+
+    def extract_from_document(self, document):
+        all_sections = _get_participants_sections(document["text"])
+        result = []
+        for section in all_sections:
+            all_parts = _split_participants_section(*section)
+            for part, part_start, part_end in all_parts:
+                try:
+                    extracted = self.extract_from_snippet(part)
+                except Exception:
+                    pass
+                else:
+                    extracted["start_pos"] += part_start
+                    extracted["end_pos"] += part_start
+                    extracted["text"] = document["text"][
+                        extracted["start_pos"] : extracted["end_pos"]
+                    ]
+                    for child in extracted.values():
+                        try:
+                            child["start_pos"] += part_start
+                            child["end_pos"] += part_start
+                        except (TypeError, KeyError):
+                            pass
+                    result.append(extracted)
+        return result
 
 
-def _get_participants_sections(article_text: str) -> List[str]:
-    sections = re.findall(
+def _get_participants_sections(
+    article_text: str,
+) -> List[Tuple[str, str, int, int]]:
+    sections = []
+    for sec in re.finditer(
         r"^#[^\n]*(participants?|subjects?|abstract)[^\n]*(.*?)(?:\n\n\n|^#)",
         article_text,
         flags=re.I | re.MULTILINE | re.DOTALL,
-    )
+    ):
+        sections.append((sec.group(1), sec.group(2), sec.start(2), sec.end(2)))
     return sections
 
 
@@ -109,10 +160,36 @@ _PARTICIPANTS_NAME = (
 )
 
 
-def _split_participants_section(section: str) -> List[str]:
-    all_parts = re.split(_PARTICIPANTS_NAME, section, flags=re.I)
+def _split(section, flags):
+    parts = []
+    start = 0
+    match = None
+    for match in re.finditer(
+        rf"(?:[^()]|\([^)]+\))*?{_PARTICIPANTS_NAME}", section, flags=flags
+    ):
+        parts.append(section[start : match.start(1)])
+        parts.append(section[match.start(1) : match.end(1)])
+        start = match.end(1)
+    if match is not None:
+        parts.append(section[match.end(1) :])
+    return parts
+
+
+def _split_participants_section(
+    section_name: str, section: str, section_start: str, section_end: str
+) -> List[Tuple[str, int, int]]:
+    all_parts = _split(section, flags=re.I)
     concatenated_parts = []
+    start, end = section_start, section_end
     for idx in range(1, len(all_parts) - 1, 2):
-        concatenated_parts.append(all_parts[idx - 1] + all_parts[idx])
-        concatenated_parts.append(all_parts[idx] + all_parts[idx + 1])
+        end += len(all_parts[idx - 1]) + len(all_parts[idx])
+        concatenated_parts.append(
+            (all_parts[idx - 1] + all_parts[idx], start, end)
+        )
+        start += len(all_parts[idx - 1])
+        end += len(all_parts[idx + 1])
+        concatenated_parts.append(
+            (all_parts[idx] + all_parts[idx + 1], start, end)
+        )
+        start += len(all_parts[idx])
     return concatenated_parts
