@@ -5,13 +5,13 @@ from typing import List, Tuple
 from lark import Lark, Transformer
 
 
-def _get_parser() -> Lark:
+def _get_parser(start="participants", ambiguity="explicit") -> Lark:
     grammar = (
         Path(__file__)
         .parent.joinpath("_data", "n_participants_grammar.lark")
         .read_text("utf-8")
     )
-    parser = Lark(grammar, start="participants", ambiguity="explicit")
+    parser = Lark(grammar, start=start, ambiguity=ambiguity)
     return parser
 
 
@@ -90,10 +90,51 @@ class ParticipantsTransformer(Transformer):
     def extra_text(self, extra):
         return " ".join(extra)
 
+    def age_info(self, info):
+        return info[0]
+
+    def age_mean_std(self, info):
+        return {
+            "age_mean": float(info[0].value),
+            "start_pos": info[0].start_pos,
+            "end_pos": info[0].end_pos,
+        }
+
+    def age_mean(self, info):
+        return {
+            "age_mean": float(info[0].value),
+            "start_pos": info[0].start_pos,
+            "end_pos": info[0].end_pos,
+        }
+
+    def participants_subgroup_n(self, info):
+        return {
+            "n_subgroup": info[0]["value"],
+            "subgroup_name": info[1].value,
+            "start_pos": info[0]["start_pos"],
+            "end_pos": info[1].end_pos,
+        }
+
+    def participants_details(self, details):
+        return [d for d in details if d is not None]
+
+    def age_range(self, info):
+        return {
+            "age_range": (info[0][0], info[2][0]),
+            "start_pos": info[0][1],
+            "end_pos": info[2][2],
+        }
+
+    def extra_detail(self, extra):
+        return None
+
 
 class Extractor:
     def __init__(self):
         self._parser = _get_parser()
+        self._details_parser = _get_parser(
+            start="participants_details", ambiguity="resolve"
+        )
         self._transformer = ParticipantsTransformer()
 
     def extract_from_snippet(self, text):
@@ -115,10 +156,21 @@ class Extractor:
         result.update({"start_pos": start_pos, "end_pos": end_pos})
         return result
 
+    def extract_details(self, snippet):
+        all_extracted = []
+        for match in re.finditer(r"(\([^)]+\))", snippet):
+            extracted = self._transformer.transform(
+                self._details_parser.parse(match.group(1))
+            )
+            if extracted:
+                all_extracted.append(extracted)
+        return all_extracted
+
     def extract_from_document(self, document):
         all_sections = _get_participants_sections(document["text"])
         result = []
         for section in all_sections:
+            extracted_from_section = []
             all_parts = _split_participants_section(*section)
             for part, part_start, part_end in all_parts:
                 try:
@@ -131,13 +183,30 @@ class Extractor:
                     extracted["text"] = document["text"][
                         extracted["start_pos"] : extracted["end_pos"]
                     ]
+                    extracted["section"] = section[0].strip()
                     for child in extracted.values():
                         try:
                             child["start_pos"] += part_start
                             child["end_pos"] += part_start
                         except (TypeError, KeyError):
                             pass
-                    result.append(extracted)
+                    extracted_from_section.append(extracted)
+            for i in range(len(extracted_from_section) - 1):
+                extracted_from_section[i]["details"] = self.extract_details(
+                    document["text"][
+                        extracted_from_section[i][
+                            "start_pos"
+                        ] : extracted_from_section[i + 1]["end_pos"]
+                    ]
+                )
+            if extracted_from_section:
+                extracted_from_section[-1]["details"] = self.extract_details(
+                    document["text"][
+                        extracted_from_section[-1]["start_pos"] : section[-1]
+                    ]
+                )
+
+            result.extend(extracted_from_section)
         return result
 
 
@@ -146,7 +215,8 @@ def _get_participants_sections(
 ) -> List[Tuple[str, str, int, int]]:
     sections = []
     for sec in re.finditer(
-        r"^#[^\n]*(participants?|subjects?|abstract)[^\n]*(.*?)(?:\n\n\n|^#)",
+        r"^#+ ([^\n]*(?:participants?|subjects?|abstract)[^\n]*)"
+        r"(.*?)(?:\n\n\n|^#)",
         article_text,
         flags=re.I | re.MULTILINE | re.DOTALL,
     ):
@@ -178,7 +248,7 @@ def _split(section, flags):
 def _split_participants_section(
     section_name: str, section: str, section_start: str, section_end: str
 ) -> List[Tuple[str, int, int]]:
-    all_parts = _split(section, flags=re.I)
+    all_parts = _split(section, re.I)
     concatenated_parts = []
     start, end = section_start, section_end
     for idx in range(1, len(all_parts) - 1, 2):

@@ -32,6 +32,28 @@ participants_inline: extra_text number participants_desc
 
 participants_desc: short_extra_text PARTICIPANTS_NAME
 
+participants_details: "(" participant_detail_item ("," participant_detail_item)* ")"
+
+?participant_detail_item: participants_subgroup_n
+  | age_info
+  | extra_detail
+
+participants_subgroup_n: number SUBGROUP_NAME
+
+SUBGROUP_NAME: /females?/|/males?/
+
+extra_detail:  /[^),]+/
+
+?age_info.10: age_mean_std | age_mean | age_range
+
+age_mean_std.10: "age" [":"] NUMBER "±" NUMBER "years"
+
+age_mean.10: ["mean"] "age" NUMBER "years"
+
+age_range.10:  ["age"] INT DASH INT "years"
+
+DASH: "-"|"–"|"—"|"‒"|"―"
+
 PARTICIPANTS_NAME: "participants"|"subjects"|"controls"|"patients"|"volunteers"
     |"individuals"|"adults"|"children"|"adolescents"
     |"men"|"women"|"males"|"male"|"females"|"female"
@@ -42,6 +64,6 @@ extra_text: TOKEN*
 TOKEN: /\b\w+\b/ | /\([^)]*\)/ | /\W/
 WS: /\s/
 
-%import common (INT)
+%import common (INT, NUMBER)
 %ignore WS
 %ignore "-"
