@@ -2,7 +2,7 @@ from pathlib import Path
 import re
 from typing import List, Tuple
 
-from lark import Lark, Transformer
+from lark import Lark, Transformer, Discard
 
 
 def _get_parser(start="participants", ambiguity="explicit") -> Lark:
@@ -116,7 +116,7 @@ class ParticipantsTransformer(Transformer):
         }
 
     def participants_details(self, details):
-        return [d for d in details if d is not None]
+        return details
 
     def age_range(self, info):
         return {
@@ -126,7 +126,10 @@ class ParticipantsTransformer(Transformer):
         }
 
     def extra_detail(self, extra):
-        return None
+        return Discard
+
+    def DETAIL_SEP(self, sep):
+        return Discard
 
 
 class Extractor:

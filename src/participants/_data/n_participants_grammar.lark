@@ -32,7 +32,9 @@ participants_inline: extra_text number participants_desc
 
 participants_desc: short_extra_text PARTICIPANTS_NAME
 
-participants_details: "(" participant_detail_item ("," participant_detail_item)* ")"
+participants_details: "(" participant_detail_item (DETAIL_SEP participant_detail_item)* ")"
+
+DETAIL_SEP: ","|";"|"and"
 
 ?participant_detail_item: participants_subgroup_n
   | age_info
