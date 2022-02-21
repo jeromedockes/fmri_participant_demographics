@@ -15,12 +15,16 @@ def _get_parser(start="participants", ambiguity="explicit") -> Lark:
     return parser
 
 
+def _triplet_to_dict(triplet):
+    return dict(zip(("value", "start_pos", "end_pos"), triplet))
+
+
 class ParticipantsTransformer(Transformer):
     def INT(self, n):
         return int(n.value), n.start_pos, n.end_pos
 
     def digit_number(self, n):
-        return dict(zip(("value", "start_pos", "end_pos"), n[0]))
+        return _triplet_to_dict(n[0])
 
     def UNIT_NAME(self, n):
         value = (
@@ -70,10 +74,10 @@ class ParticipantsTransformer(Transformer):
         return value, start, end
 
     def text_number(self, n):
-        return dict(zip(("value", "start_pos", "end_pos"), n[0]))
+        return _triplet_to_dict(n[0])
 
     def participants_desc(self, desc):
-        return dict(zip(("value", "start_pos", "end_pos"), desc[-1]))
+        return _triplet_to_dict(desc[-1])
 
     def PARTICIPANTS_NAME(self, name):
         return name.value, name.start_pos, name.end_pos
@@ -81,8 +85,17 @@ class ParticipantsTransformer(Transformer):
     def participants_inline(self, part):
         return {"n_participants": part[1], "participants_name": part[2]}
 
+    def PARTICIPANTS_ADJ(self, adj):
+        return adj.value, adj.start_pos, adj.end_pos
+
     def participants_n(self, part):
-        return {"n_participants": part[1], "participants_name": part[0]}
+        res = {
+            "n_participants": _triplet_to_dict(part[4]),
+            "participants_name": _triplet_to_dict(part[3]),
+        }
+        if part[1] is not None:
+            res["participants_adj"] = _triplet_to_dict(part[1])
+        return res
 
     def participants(self, part):
         return part[0]
@@ -166,15 +179,22 @@ class Extractor:
                 self._details_parser.parse(match.group(1))
             )
             if extracted:
-                all_extracted.append(extracted)
+                all_extracted.extend(extracted)
         return all_extracted
 
-    def extract_from_document(self, document):
-        all_sections = _get_participants_sections(document["text"])
+    def extract_from_text(self, text):
+        all_sections = _get_participants_sections(text)
         result = []
-        for section in all_sections:
+        for (
+            section_name,
+            section_text,
+            section_start,
+            section_end,
+        ) in all_sections:
             extracted_from_section = []
-            all_parts = _split_participants_section(*section)
+            all_parts = _split_participants_section(
+                section_text, section_start
+            )
             for part, part_start, part_end in all_parts:
                 try:
                     extracted = self.extract_from_snippet(part)
@@ -183,10 +203,10 @@ class Extractor:
                 else:
                     extracted["start_pos"] += part_start
                     extracted["end_pos"] += part_start
-                    extracted["text"] = document["text"][
+                    extracted["text"] = text[
                         extracted["start_pos"] : extracted["end_pos"]
                     ]
-                    extracted["section"] = section[0].strip()
+                    extracted["section"] = section_name.strip()
                     for child in extracted.values():
                         try:
                             child["start_pos"] += part_start
@@ -196,7 +216,7 @@ class Extractor:
                     extracted_from_section.append(extracted)
             for i in range(len(extracted_from_section) - 1):
                 extracted_from_section[i]["details"] = self.extract_details(
-                    document["text"][
+                    text[
                         extracted_from_section[i][
                             "start_pos"
                         ] : extracted_from_section[i + 1]["end_pos"]
@@ -204,9 +224,7 @@ class Extractor:
                 )
             if extracted_from_section:
                 extracted_from_section[-1]["details"] = self.extract_details(
-                    document["text"][
-                        extracted_from_section[-1]["start_pos"] : section[-1]
-                    ]
+                    text[extracted_from_section[-1]["start_pos"] : section_end]
                 )
 
             result.extend(extracted_from_section)
@@ -219,7 +237,7 @@ def _get_participants_sections(
     sections = []
     for sec in re.finditer(
         r"^#+ ([^\n]*(?:participants?|subjects?|abstract)[^\n]*)"
-        r"(.*?)(?:\n\n\n|^#)",
+        r"(.*?)(?:\n\n\n|^#|\Z)",
         article_text,
         flags=re.I | re.MULTILINE | re.DOTALL,
     ):
@@ -228,41 +246,27 @@ def _get_participants_sections(
 
 
 _PARTICIPANTS_NAME = (
-    r"(participants|subjects|controls|patients|volunteers|individuals"
+    r"(?:participants|subjects|controls|patients|volunteers|individuals"
     "|adults|children|adolescents|men|women|males|male|females|female)"
 )
 
 
-def _split(section, flags):
+def _split_participants_section(
+    section: str, section_start: int
+) -> List[Tuple[str, int, int]]:
     parts = []
     start = 0
-    match = None
     for match in re.finditer(
-        rf"(?:[^()]|\([^)]+\))*?{_PARTICIPANTS_NAME}", section, flags=flags
+        rf"(?:[^()]|\([^)]*\))*?{_PARTICIPANTS_NAME}(?:\s\([^)]*\))?",
+        section,
+        flags=re.I | re.DOTALL,
     ):
-        parts.append(section[start : match.start(1)])
-        parts.append(section[match.start(1) : match.end(1)])
-        start = match.end(1)
-    if match is not None:
-        parts.append(section[match.end(1) :])
+        parts.append(
+            (
+                section[start : match.end()],
+                start + section_start,
+                match.end() + section_start,
+            )
+        )
+        start = match.end()
     return parts
-
-
-def _split_participants_section(
-    section_name: str, section: str, section_start: str, section_end: str
-) -> List[Tuple[str, int, int]]:
-    all_parts = _split(section, re.I)
-    concatenated_parts = []
-    start, end = section_start, section_end
-    for idx in range(1, len(all_parts) - 1, 2):
-        end += len(all_parts[idx - 1]) + len(all_parts[idx])
-        concatenated_parts.append(
-            (all_parts[idx - 1] + all_parts[idx], start, end)
-        )
-        start += len(all_parts[idx - 1])
-        end += len(all_parts[idx + 1])
-        concatenated_parts.append(
-            (all_parts[idx] + all_parts[idx + 1], start, end)
-        )
-        start += len(all_parts[idx])
-    return concatenated_parts

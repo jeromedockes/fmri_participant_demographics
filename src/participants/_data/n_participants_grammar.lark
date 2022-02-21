@@ -26,9 +26,11 @@ UNIT_NAME.10: "one"|"two"|"three"|"four"|"five"|"six"|"seven"|"eight"|"nine"
 
 participants: participants_n | participants_inline
 
-participants_n: PARTICIPANTS_NAME "(" "n" "=" INT ")" extra_text
+participants_n: extra_text [PARTICIPANTS_ADJ short_extra_text] PARTICIPANTS_NAME "(" "n" "=" INT ")"
 
-participants_inline: extra_text number participants_desc
+PARTICIPANTS_ADJ: "healthy"
+
+participants_inline: extra_text number participants_desc [ /(\([^)]*\))/ ]
 
 participants_desc: short_extra_text PARTICIPANTS_NAME
 
