@@ -12,7 +12,9 @@ def _get_parser(start, ambiguity) -> Lark:
         .parent.joinpath("_data", "participants_grammar.lark")
         .read_text("utf-8")
     )
-    parser = Lark(grammar, start=start, ambiguity=ambiguity)
+    parser = Lark(
+        grammar, start=start, ambiguity=ambiguity, g_regex_flags=re.I
+    )
     return parser
 
 
@@ -39,7 +41,11 @@ class Node:
 
 @dataclasses.dataclass
 class Token(Node):
-    value: str
+    raw_value: dataclasses.InitVar[str]
+    value: str = dataclasses.field(init=False)
+
+    def __post_init__(self, raw_value):
+        self.value = raw_value.lower()
 
 
 @dataclasses.dataclass
@@ -119,7 +125,8 @@ class DetailedParticipantsGroup:
         self.group_details = group_details
 
     def __str__(self):
-        return f"{self.group} {list(map(str, self.group_details))}"
+        details = ", ".join(map(str, self.group_details))
+        return f"{self.group} [{details}]"
 
 
 class ParticipantsTransformer(Transformer):
@@ -234,7 +241,7 @@ class ParticipantsTransformer(Transformer):
     def UNIT_NAME(self, tree):
         value = (
             "zero one two three four five six seven eight nine".split().index(
-                tree.value
+                tree.value.lower()
             )
         )
         return Number(
@@ -244,14 +251,15 @@ class ParticipantsTransformer(Transformer):
     def TEEN_NAME(self, tree):
         value = (
             "ten eleven twelve thirteen fourteen fifteen sixteen "
-            "seventeen eighteen nineteen".split().index(tree.value) + 10
+            "seventeen eighteen nineteen".split().index(tree.value.lower())
+            + 10
         )
         return Number(self.pos_offset, tree.start_pos, tree.end_pos, value)
 
     def DOZEN_NAME(self, tree):
         value = (
             "zero ten twenty thirty fourty fifty sixty "
-            "seventy eighty ninety".split().index(tree.value)
+            "seventy eighty ninety".split().index(tree.value.lower())
         ) * 10
         return Number(self.pos_offset, tree.start_pos, tree.end_pos, value)
 
@@ -290,7 +298,7 @@ class Extractor:
         for match in re.finditer(r"(\([^)]+\))", text[start_pos:end_pos]):
             transformer = ParticipantsTransformer(start_pos + match.start(1))
             extracted = transformer.transform(
-                self._details_parser.parse(match.group(1).lower())
+                self._details_parser.parse(match.group(1))
             )
             if extracted:
                 all_extracted.extend(extracted.details)
@@ -314,7 +322,7 @@ class Extractor:
                 try:
                     extracted = resolve_n_participants(
                         transformer.transform(
-                            self._participants_parser.parse(part.lower())
+                            self._participants_parser.parse(part)
                         )
                     )
                 except Exception:
