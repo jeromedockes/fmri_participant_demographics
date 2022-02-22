@@ -8,6 +8,14 @@ from lark import Lark, Transformer, Discard
 _MAX_LEN = 100
 _MAX_LEN_DETAILS = 400
 
+_PARTICIPANTS_SECTIONS = (
+    r"(?:participants?|subjects?|patients|population|abstract)"
+)
+_PARTICIPANTS_NAME = (
+    r"\b(?:participants|subjects|controls|patients|volunteers|individuals"
+    r"|adults|children|adolescents|men|women|males|male|females|female)\b"
+)
+
 
 def _get_parser(start, ambiguity) -> Lark:
     grammar = (
@@ -40,6 +48,12 @@ class Node:
     def __post_init__(self):
         self.abs_start_pos = self.pos_offset + self.start_pos
         self.abs_end_pos = self.pos_offset + self.end_pos
+
+    def summary(self):
+        return f"({self.abs_start_pos}, {self.abs_end_pos})"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.summary()}"
 
 
 @dataclasses.dataclass
@@ -78,12 +92,9 @@ class ParticipantsGroup(Node):
     adjective: Optional[Adjective]
     name: ParticipantsName
 
-    def __str__(self):
+    def summary(self):
         adj = f"{self.adjective.value} " if self.adjective is not None else ""
-        return (
-            f"{self.__class__.__name__}: "
-            f"{self.count.value} {adj}{self.name.value}"
-        )
+        return f"{self.count.value} {adj}{self.name.value}"
 
 
 @dataclasses.dataclass
@@ -91,8 +102,8 @@ class ParticipantsSubGroup(Node):
     count: Number
     name: ParticipantsName
 
-    def __str__(self):
-        return f"{self.__class__.__name__}: {self.count} {self.name}"
+    def summary(self):
+        return f"{self.count} {self.name}"
 
 
 @dataclasses.dataclass
@@ -100,17 +111,17 @@ class AgeMoments(Node):
     mean: float
     std: Optional[float]
 
-    def __str__(self):
+    def summary(self):
         std_msg = f" ± {self.std}" if self.std is not None else ""
-        return f"{self.__class__.__name__}: {self.mean}{std_msg}"
+        return f"{self.mean}{std_msg}"
 
 
 @dataclasses.dataclass
 class AgeMedian(Node):
     median: float
 
-    def __str__(self):
-        return f"{self.__class__.__name__}: {self.median}"
+    def summary(self):
+        return f"{self.median}"
 
 
 @dataclasses.dataclass
@@ -118,27 +129,30 @@ class AgeRange(Node):
     low: float
     high: float
 
-    def __str__(self):
-        return f"{self.__class__.__name__}: {self.low} – {self.high}"
+    def summary(self):
+        return f"{self.low} – {self.high}"
 
 
 @dataclasses.dataclass
 class ParticipantsDetails(Node):
     details: List[Union[ParticipantsSubGroup, AgeMoments, AgeMedian, AgeRange]]
 
-    def __str__(self):
-        content = str(list(map(str, self.details)))
-        return f"{self.__class__.__name__}: {content}"
+    def summary(self):
+        return str(list(map(str, self.details)))
 
 
+@dataclasses.dataclass
 class DetailedParticipantsGroup:
-    def __init__(self, group, group_details):
-        self.group = group
-        self.group_details = group_details
+    group: ParticipantsGroup
+    group_details: ParticipantsDetails
+    section_name: str
 
     def __str__(self):
         details = ", ".join(map(str, self.group_details))
-        return f"{self.group} [{details}]"
+        return (
+            f'{self.__class__.__name__} (in "{self.section_name}"): '
+            f"{self.group.summary()} [{details}]"
+        )
 
 
 class ParticipantsTransformer(Transformer):
@@ -363,7 +377,9 @@ class Extractor:
                 )
                 detailed.append(
                     DetailedParticipantsGroup(
-                        extracted_from_section[i], details
+                        extracted_from_section[i],
+                        details,
+                        section_name=section_name,
                     )
                 )
             if extracted_from_section:
@@ -372,7 +388,9 @@ class Extractor:
                 )
                 detailed.append(
                     DetailedParticipantsGroup(
-                        extracted_from_section[-1], details
+                        extracted_from_section[-1],
+                        details,
+                        section_name=section_name,
                     )
                 )
 
@@ -385,19 +403,14 @@ def _get_participants_sections(
 ) -> List[Tuple[str, str, int, int]]:
     sections = []
     for sec in re.finditer(
-        r"^(#+ )([^\n]*(?:participants?|subjects?|patients|population|abstract)[^\n]*)"
-        r"(.*?)(?:^\1|\Z)",
+        rf"^(#+ )([^\n]*{_PARTICIPANTS_SECTIONS}[^\n]*)" r"(.*?)(?:^\1|\Z)",
         article_text,
         flags=re.I | re.MULTILINE | re.DOTALL,
     ):
-        sections.append((sec.group(2), sec.group(3), sec.start(3), sec.end(3)))
+        sections.append(
+            (sec.group(2).strip(), sec.group(3), sec.start(3), sec.end(3))
+        )
     return sections
-
-
-_PARTICIPANTS_NAME = (
-    r"\b(?:participants|subjects|controls|patients|volunteers|individuals"
-    r"|adults|children|adolescents|men|women|males|male|females|female)\b"
-)
 
 
 def _finditer(pattern, string):
