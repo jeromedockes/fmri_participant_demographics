@@ -1,185 +1,299 @@
 from pathlib import Path
+import dataclasses
 import re
-from typing import List, Tuple
+from typing import List, Optional, Union, Tuple
 
 from lark import Lark, Transformer, Discard
 
 
-def _get_parser(start="participants", ambiguity="explicit") -> Lark:
+def _get_parser(start, ambiguity) -> Lark:
     grammar = (
         Path(__file__)
-        .parent.joinpath("_data", "n_participants_grammar.lark")
+        .parent.joinpath("_data", "participants_grammar.lark")
         .read_text("utf-8")
     )
     parser = Lark(grammar, start=start, ambiguity=ambiguity)
     return parser
 
 
-def _triplet_to_dict(triplet):
-    return dict(zip(("value", "start_pos", "end_pos"), triplet))
+def _get_n_participants_parser():
+    return _get_parser(start="participants", ambiguity="explicit")
+
+
+def _get_participants_details_parser():
+    return _get_parser(start="participants_details", ambiguity="resolve")
+
+
+@dataclasses.dataclass
+class Node:
+    pos_offset: int = dataclasses.field(repr=False)
+    start_pos: int = dataclasses.field(repr=False)
+    end_pos: int = dataclasses.field(repr=False)
+    abs_start_pos: int = dataclasses.field(init=False)
+    abs_end_pos: int = dataclasses.field(init=False)
+
+    def __post_init__(self):
+        self.abs_start_pos = self.pos_offset + self.start_pos
+        self.abs_end_pos = self.pos_offset + self.end_pos
+
+
+@dataclasses.dataclass
+class Token(Node):
+    value: str
+
+
+@dataclasses.dataclass
+class Adjective(Token):
+    pass
+
+
+@dataclasses.dataclass
+class ParticipantsName(Token):
+    pass
+
+
+@dataclasses.dataclass
+class Number(Node):
+    value: int
+
+
+@dataclasses.dataclass
+class NValue(Number):
+    pass
+
+
+@dataclasses.dataclass
+class ParticipantsGroup(Node):
+    count: Number
+    adjective: Optional[Adjective]
+    name: ParticipantsName
+
+    def __str__(self):
+        adj = f"{self.adjective.value} " if self.adjective is not None else ""
+        return (
+            f"{self.__class__.__name__}: "
+            f"{self.count.value} {adj}{self.name.value}"
+        )
+
+
+@dataclasses.dataclass
+class ParticipantsSubGroup(Node):
+    count: Number
+    name: ParticipantsName
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.count} {self.name}"
+
+
+@dataclasses.dataclass
+class AgeMoments(Node):
+    mean: float
+    std: Optional[float]
+
+    def __str__(self):
+        std_msg = f" ± {self.std}" if self.std is not None else ""
+        return f"{self.__class__.__name__}: {self.mean}{std_msg}"
+
+
+@dataclasses.dataclass
+class AgeRange(Node):
+    low: float
+    high: float
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.low} – {self.high}"
+
+
+@dataclasses.dataclass
+class ParticipantsDetails(Node):
+    details: List[Union[ParticipantsSubGroup, AgeMoments, AgeRange]]
+
+    def __str__(self):
+        content = str(list(map(str, self.details)))
+        return f"{self.__class__.__name__}: {content}"
+
+
+class DetailedParticipantsGroup:
+    def __init__(self, group, group_details):
+        self.group = group
+        self.group_details = group_details
+
+    def __str__(self):
+        return f"{self.group} {list(map(str, self.group_details))}"
 
 
 class ParticipantsTransformer(Transformer):
-    def INT(self, n):
-        return int(n.value), n.start_pos, n.end_pos
+    def __init__(self, pos_offset, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pos_offset = pos_offset
 
-    def digit_number(self, n):
-        return _triplet_to_dict(n[0])
+    def participants_n(self, tree):
+        if len(tree) == 2:
+            name, count = tree
+            adj = None
+            start_pos = name.start_pos
+        else:
+            adj, name, count = tree
+            start_pos = adj.start_pos
+        return ParticipantsGroup(
+            self.pos_offset, start_pos, count.end_pos, count, adj, name
+        )
 
-    def UNIT_NAME(self, n):
+    def participants_inline(self, tree):
+        if len(tree) == 2:
+            count, name = tree
+            adj = None
+        else:
+            count, adj, name = tree
+        return ParticipantsGroup(
+            self.pos_offset,
+            count.start_pos,
+            name.end_pos,
+            count,
+            adj,
+            name,
+        )
+
+    def participants_details(self, tree):
+        if not tree:
+            return None
+        start_pos = min(child.start_pos for child in tree)
+        end_pos = max(child.end_pos for child in tree)
+        return ParticipantsDetails(self.pos_offset, start_pos, end_pos, tree)
+
+    def participants_subgroup(self, tree):
+        count, name = tree
+        return ParticipantsSubGroup(
+            self.pos_offset,
+            count.start_pos,
+            name.end_pos,
+            count.value,
+            name.value,
+        )
+
+    def age_mean_std(self, tree):
+        mean, std = tree
+        return AgeMoments(
+            self.pos_offset,
+            mean.start_pos,
+            std.end_pos,
+            float(mean.value),
+            float(std.value),
+        )
+
+    def age_mean(self, tree):
+        (mean,) = tree
+        return AgeMoments(
+            self.pos_offset,
+            mean.start_pos,
+            mean.end_pos,
+            float(mean.value),
+            None,
+        )
+
+    def age_range(self, tree):
+        low, high = tree
+        return AgeRange(
+            self.pos_offset,
+            low.start_pos,
+            high.end_pos,
+            float(low.value),
+            float(high.value),
+        )
+
+    def extra_participants_detail(self, tree):
+        return Discard
+
+    def n_value(self, tree):
+        lp, n, rp = tree
+        return NValue(self.pos_offset, lp.start_pos, rp.end_pos, n.value)
+
+    def hundred_text_number(self, tree):
+        hundred_part, rest = tree
+        if rest is None:
+            value = 100 * hundred_part.value
+            end_pos = hundred_part.end_pos
+        else:
+            value = 100 * hundred_part.value + rest.value
+            end_pos = rest.end_pos
+        return Number(self.pos_offset, hundred_part.start_pos, end_pos, value)
+
+    def dozen_text_number(self, tree):
+        if len(tree) == 1:
+            teen = tree[0]
+            return teen
+        dozen, unit = tree
+        if unit is None:
+            value = dozen.value
+            end_pos = dozen.end_pos
+        else:
+            value = dozen.value + unit.value
+            end_pos = unit.end_pos
+        return Number(self.pos_offset, dozen.start_pos, end_pos, value)
+
+    def UNIT_NAME(self, tree):
         value = (
             "zero one two three four five six seven eight nine".split().index(
-                str(n)
+                tree.value
             )
         )
-        return value, n.start_pos, n.end_pos
+        return Number(
+            self.pos_offset, tree.start_pos, tree.end_pos, int(value)
+        )
 
-    def unit_text_number(self, n):
-        return n[0]
-
-    def unit_part(self, n):
-        return n[0]
-
-    def DOZEN_NAME(self, n):
-        value = (
-            "zero ten twenty thirty fourty fifty sixty "
-            "seventy eighty ninety".split().index(str(n))
-        ) * 10
-        return value, n.start_pos, n.end_pos
-
-    def TEEN_NAME(self, n):
+    def TEEN_NAME(self, tree):
         value = (
             "ten eleven twelve thirteen fourteen fifteen sixteen "
-            "seventeen eighteen nineteen".split().index(str(n)) + 10
+            "seventeen eighteen nineteen".split().index(tree.value) + 10
         )
-        return value, n.start_pos, n.end_pos
+        return Number(self.pos_offset, tree.start_pos, tree.end_pos, value)
 
-    def dozen_text_number(self, n):
-        value = sum(p[0] for p in n if p is not None)
-        start = min(p[1] for p in n if p is not None)
-        end = max(p[2] for p in n if p is not None)
-        return value, start, end
+    def DOZEN_NAME(self, tree):
+        value = (
+            "zero ten twenty thirty fourty fifty sixty "
+            "seventy eighty ninety".split().index(tree.value)
+        ) * 10
+        return Number(self.pos_offset, tree.start_pos, tree.end_pos, value)
 
-    def dozen_part(self, n):
-        return n[0]
+    def INT(self, tree):
+        return Number(
+            self.pos_offset, tree.start_pos, tree.end_pos, int(tree.value)
+        )
 
-    def hundred_part(self, n):
-        value = 100 * n[0][0]
-        return value, n[0][1], n[0][2]
+    def PARTICIPANTS_NAME(self, tree):
+        return ParticipantsName(
+            self.pos_offset, tree.start_pos, tree.end_pos, tree.value
+        )
 
-    def hundred_text_number(self, n):
-        value = sum(p[0] for p in n if p is not None)
-        start = min(p[1] for p in n if p is not None)
-        end = max(p[2] for p in n if p is not None)
-        return value, start, end
+    def ADJ(self, tree):
+        return Adjective(
+            self.pos_offset, tree.start_pos, tree.end_pos, tree.value
+        )
 
-    def text_number(self, n):
-        return _triplet_to_dict(n[0])
 
-    def participants_desc(self, desc):
-        return _triplet_to_dict(desc[-1])
-
-    def PARTICIPANTS_NAME(self, name):
-        return name.value, name.start_pos, name.end_pos
-
-    def participants_inline(self, part):
-        return {"n_participants": part[1], "participants_name": part[2]}
-
-    def PARTICIPANTS_ADJ(self, adj):
-        return adj.value, adj.start_pos, adj.end_pos
-
-    def participants_n(self, part):
-        res = {
-            "n_participants": _triplet_to_dict(part[4]),
-            "participants_name": _triplet_to_dict(part[3]),
-        }
-        if part[1] is not None:
-            res["participants_adj"] = _triplet_to_dict(part[1])
-        return res
-
-    def participants(self, part):
-        return part[0]
-
-    def extra_text(self, extra):
-        return " ".join(extra)
-
-    def age_info(self, info):
-        return info[0]
-
-    def age_mean_std(self, info):
-        return {
-            "age_mean": float(info[0].value),
-            "start_pos": info[0].start_pos,
-            "end_pos": info[0].end_pos,
-        }
-
-    def age_mean(self, info):
-        return {
-            "age_mean": float(info[0].value),
-            "start_pos": info[0].start_pos,
-            "end_pos": info[0].end_pos,
-        }
-
-    def participants_subgroup_n(self, info):
-        return {
-            "n_subgroup": info[0]["value"],
-            "subgroup_name": info[1].value,
-            "start_pos": info[0]["start_pos"],
-            "end_pos": info[1].end_pos,
-        }
-
-    def participants_details(self, details):
-        return details
-
-    def age_range(self, info):
-        return {
-            "age_range": (info[0][0], info[2][0]),
-            "start_pos": info[0][1],
-            "end_pos": info[2][2],
-        }
-
-    def extra_detail(self, extra):
-        return Discard
-
-    def DETAIL_SEP(self, sep):
-        return Discard
+def resolve_n_participants(transformed_text):
+    if not hasattr(transformed_text, "children"):
+        return transformed_text
+    return sorted(
+        map(resolve_n_participants, transformed_text.children),
+        key=lambda c: (-c.count.end_pos, c.count.start_pos),
+    )[0]
 
 
 class Extractor:
     def __init__(self):
-        self._parser = _get_parser()
-        self._details_parser = _get_parser(
-            start="participants_details", ambiguity="resolve"
-        )
-        self._transformer = ParticipantsTransformer()
+        self._participants_parser = _get_n_participants_parser()
+        self._details_parser = _get_participants_details_parser()
 
-    def extract_from_snippet(self, text):
-        tree = self._parser.parse(text.lower())
-        transformed = self._transformer.transform(tree)
-        if hasattr(transformed, "children"):
-            children = sorted(
-                transformed.children,
-                key=lambda c: (
-                    -c["n_participants"]["end_pos"],
-                    c["n_participants"]["start_pos"],
-                ),
-            )
-            result = children[0]
-        else:
-            result = transformed
-        start_pos = min([c["start_pos"] for c in result.values()])
-        end_pos = max([c["end_pos"] for c in result.values()])
-        result.update({"start_pos": start_pos, "end_pos": end_pos})
-        return result
-
-    def extract_details(self, snippet):
+    def extract_details(self, text, start_pos, end_pos):
         all_extracted = []
-        for match in re.finditer(r"(\([^)]+\))", snippet):
-            extracted = self._transformer.transform(
+        for match in re.finditer(r"(\([^)]+\))", text[start_pos:end_pos]):
+            transformer = ParticipantsTransformer(start_pos + match.start(1))
+            extracted = transformer.transform(
                 self._details_parser.parse(match.group(1))
             )
             if extracted:
-                all_extracted.extend(extracted)
+                all_extracted.extend(extracted.details)
         return all_extracted
 
     def extract_from_text(self, text):
@@ -196,38 +310,41 @@ class Extractor:
                 section_text, section_start
             )
             for part, part_start, part_end in all_parts:
+                transformer = ParticipantsTransformer(part_start)
                 try:
-                    extracted = self.extract_from_snippet(part)
+                    print(part)
+                    extracted = resolve_n_participants(
+                        transformer.transform(
+                            self._participants_parser.parse(part)
+                        )
+                    )
                 except Exception:
                     pass
                 else:
-                    extracted["start_pos"] += part_start
-                    extracted["end_pos"] += part_start
-                    extracted["text"] = text[
-                        extracted["start_pos"] : extracted["end_pos"]
-                    ]
-                    extracted["section"] = section_name.strip()
-                    for child in extracted.values():
-                        try:
-                            child["start_pos"] += part_start
-                            child["end_pos"] += part_start
-                        except (TypeError, KeyError):
-                            pass
                     extracted_from_section.append(extracted)
+            detailed = []
             for i in range(len(extracted_from_section) - 1):
-                extracted_from_section[i]["details"] = self.extract_details(
-                    text[
-                        extracted_from_section[i][
-                            "start_pos"
-                        ] : extracted_from_section[i + 1]["end_pos"]
-                    ]
+                details = self.extract_details(
+                    text,
+                    extracted_from_section[i].abs_start_pos,
+                    extracted_from_section[i + 1].abs_end_pos,
+                )
+                detailed.append(
+                    DetailedParticipantsGroup(
+                        extracted_from_section[i], details
+                    )
                 )
             if extracted_from_section:
-                extracted_from_section[-1]["details"] = self.extract_details(
-                    text[extracted_from_section[-1]["start_pos"] : section_end]
+                details = self.extract_details(
+                    text, extracted_from_section[-1].abs_start_pos, section_end
+                )
+                detailed.append(
+                    DetailedParticipantsGroup(
+                        extracted_from_section[-1], details
+                    )
                 )
 
-            result.extend(extracted_from_section)
+            result.extend(detailed)
         return result
 
 

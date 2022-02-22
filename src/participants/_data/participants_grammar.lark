@@ -1,0 +1,65 @@
+?participants: participants_n | participants_inline
+
+participants_n.2: _extra_text PARTICIPANTS_NAME n_value _extra_text
+participants_inline: _extra_text number _extra_text PARTICIPANTS_NAME _extra_text
+
+participants_details: "(" participants_detail_item (_SEP participants_detail_item)* ")"
+
+?participants_detail_item: participants_subgroup
+  | age_info
+  | extra_participants_detail
+
+participants_subgroup.1: number SUBGROUP_NAME
+
+?age_info.1: age_mean_std | age_mean | age_range
+
+age_mean_std: [ "age" ] NUMBER "±" NUMBER "years"
+
+age_mean: [ "mean" ] "age" NUMBER "years"
+
+age_range:  ["age" | "range" ] INT _DASH INT "years"
+
+extra_participants_detail: _TOKEN*
+
+_extra_text: (ADJ|_PARENTHESES|_TOKEN|_SINGLE_RPAREN)*
+
+n_value: LPAREN "n" "=" INT RPAREN
+
+?number: INT
+  | text_number
+
+?text_number.1: hundred_text_number | dozen_text_number | TEEN_NAME | UNIT_NAME
+
+
+hundred_text_number.1: (dozen_text_number | UNIT_NAME) "hundred" [ "and" ] [ dozen_text_number | UNIT_NAME ]
+
+dozen_text_number.1: DOZEN_NAME [ UNIT_NAME ] | TEEN_NAME
+
+UNIT_NAME.1: "one"|"two"|"three"|"four"|"five"|"six"|"seven"|"eight"|"nine"
+
+TEEN_NAME.1: "ten"|"eleven"|"twelve"|"thirteen"|"fourteen"|"fifteen"
+    |"sixteen"|"seventeen"|"eighteen"|"nineteen"
+
+DOZEN_NAME.1: "twenty"|"thirty"|"fourty"|"fifty"|"sixty"|"seventy"|"eighty"
+    |"ninety"
+
+PARTICIPANTS_NAME.1: "participants"|"subjects"|"controls"|"patients"|"volunteers"
+    |"individuals"|"adults"|"children"|"adolescents"
+    |"men"|"women"|"males"|"male"|"females"|"female"
+
+SUBGROUP_NAME: "females"|"female"|"males"|"male"
+
+ADJ.1: "healthy"
+_SEP: ","|";"|"and"
+_PARENTHESES: /\([^)]*\)/
+_TOKEN: /\b\w+\b/
+_SINGLE_RPAREN: /[)]/
+_DASH: "-"|"–"|"—"|"‒"|"―"
+LPAREN: "("
+RPAREN: ")"
+WS: /\s+/
+PUNCT: /[^a-zA-Z0-9()]/
+
+%import common (INT, NUMBER)
+%ignore WS
+%ignore PUNCT
