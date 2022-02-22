@@ -48,6 +48,7 @@ class Token(Node):
     value: str = dataclasses.field(init=False)
 
     def __post_init__(self, raw_value):
+        super().__post_init__()
         self.value = raw_value.lower()
 
 
@@ -278,7 +279,7 @@ class ParticipantsTransformer(Transformer):
 
     def DOZEN_NAME(self, tree):
         value = (
-            "zero ten twenty thirty fourty fifty sixty "
+            "zero ten twenty thirty forty fifty sixty "
             "seventy eighty ninety".split().index(tree.value.lower())
         ) * 10
         return Number(self.pos_offset, tree.start_pos, tree.end_pos, value)
