@@ -5,6 +5,9 @@ from typing import List, Optional, Union, Tuple
 
 from lark import Lark, Transformer, Discard
 
+_MAX_LEN = 100
+_MAX_LEN_DETAILS = 400
+
 
 def _get_parser(start, ambiguity) -> Lark:
     grammar = (
@@ -102,6 +105,14 @@ class AgeMoments(Node):
 
 
 @dataclasses.dataclass
+class AgeMedian(Node):
+    median: float
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.median}"
+
+
+@dataclasses.dataclass
 class AgeRange(Node):
     low: float
     high: float
@@ -112,7 +123,7 @@ class AgeRange(Node):
 
 @dataclasses.dataclass
 class ParticipantsDetails(Node):
-    details: List[Union[ParticipantsSubGroup, AgeMoments, AgeRange]]
+    details: List[Union[ParticipantsSubGroup, AgeMoments, AgeMedian, AgeRange]]
 
     def __str__(self):
         content = str(list(map(str, self.details)))
@@ -196,6 +207,15 @@ class ParticipantsTransformer(Transformer):
             mean.end_pos,
             float(mean.value),
             None,
+        )
+
+    def age_median(self, tree):
+        (median,) = tree
+        return AgeMedian(
+            self.pos_offset,
+            median.start_pos,
+            median.end_pos,
+            float(median.value),
         )
 
     def age_range(self, tree):
@@ -295,11 +315,15 @@ class Extractor:
 
     def extract_details(self, text, start_pos, end_pos):
         all_extracted = []
+        end_pos = min(end_pos, start_pos + _MAX_LEN_DETAILS)
         for match in re.finditer(r"(\([^)]+\))", text[start_pos:end_pos]):
             transformer = ParticipantsTransformer(start_pos + match.start(1))
-            extracted = transformer.transform(
-                self._details_parser.parse(match.group(1))
-            )
+            try:
+                extracted = transformer.transform(
+                    self._details_parser.parse(match.group(1))
+                )
+            except Exception:
+                extracted = []
             if extracted:
                 all_extracted.extend(extracted.details)
         return all_extracted
@@ -360,31 +384,54 @@ def _get_participants_sections(
 ) -> List[Tuple[str, str, int, int]]:
     sections = []
     for sec in re.finditer(
-        r"^#+ ([^\n]*(?:participants?|subjects?|abstract)[^\n]*)"
-        r"(.*?)(?:\n\n\n|^#|\Z)",
+        r"^(#+ )([^\n]*(?:participants?|subjects?|patients|population|abstract)[^\n]*)"
+        r"(.*?)(?:^\1|\Z)",
         article_text,
         flags=re.I | re.MULTILINE | re.DOTALL,
     ):
-        sections.append((sec.group(1), sec.group(2), sec.start(2), sec.end(2)))
+        sections.append((sec.group(2), sec.group(3), sec.start(3), sec.end(3)))
     return sections
 
 
 _PARTICIPANTS_NAME = (
-    r"(?:participants|subjects|controls|patients|volunteers|individuals"
-    "|adults|children|adolescents|men|women|males|male|females|female)"
+    r"\b(?:participants|subjects|controls|patients|volunteers|individuals"
+    r"|adults|children|adolescents|men|women|males|male|females|female)\b"
 )
+
+
+def _finditer(pattern, string):
+    start = 0
+    while start < len(string):
+        match = pattern.match(string, start)
+        if match is None:
+            return
+        yield match
+        start = match.end()
 
 
 def _split_participants_section(
     section: str, section_start: int
 ) -> List[Tuple[str, int, int]]:
     parts = []
-    start = 0
-    for match in re.finditer(
-        rf"(?:[^()]|\([^)]*\))*?{_PARTICIPANTS_NAME}(?:\s\([^)]*\))?",
-        section,
+    pattern = re.compile(
+        rf"(?:[^(]|\([^)]*\))*?({_PARTICIPANTS_NAME})(?:\s\([^)]*\))?",
         flags=re.I | re.DOTALL,
+    )
+    for match in _finditer(
+        pattern,
+        section,
     ):
+        start = match.start()
+        found = section[start : match.end(1)]
+        imatch = re.match(
+            rf"^(?:[^(]|\([^)]*\))*?(.{{,{_MAX_LEN}}})$",
+            found,
+            flags=re.I | re.DOTALL,
+        )
+        if imatch is not None:
+            start += imatch.start(1)
+        else:
+            start = max(start, match.end() - _MAX_LEN)
         parts.append(
             (
                 section[start : match.end()],
@@ -392,5 +439,4 @@ def _split_participants_section(
                 match.end() + section_start,
             )
         )
-        start = match.end()
     return parts

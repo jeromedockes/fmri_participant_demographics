@@ -11,17 +11,19 @@ participants_details: "(" participants_detail_item (_SEP participants_detail_ite
 
 participants_subgroup.1: number SUBGROUP_NAME
 
-?age_info.1: age_mean_std | age_mean | age_range
+?age_info.1: age_mean_std | age_mean | age_median | age_range
 
-age_mean_std: [ "age" ] NUMBER "±" NUMBER "years"
+age_mean_std: _ALPHA_WORD* NUMBER "±" NUMBER "years" ["old"]
 
-age_mean: [ "mean" ] "age" NUMBER "years"
+age_mean: [ "mean" ] "age" NUMBER "years" ["old"]
 
-age_range:  ["age" | "range" ] INT _DASH INT "years"
+age_median: "median" ["age"] NUMBER "years" ["old"]
 
-extra_participants_detail: _TOKEN*
+age_range:  _ALPHA_WORD* INT _DASH INT "years" ["old"]
 
-_extra_text: (ADJ|_PARENTHESES|_TOKEN|_SINGLE_RPAREN)*
+extra_participants_detail: _WORD*
+
+_extra_text: (ADJ|_PARENTHESES|_WORD|_SINGLE_RPAREN)*
 
 n_value: LPAREN "n" "=" INT RPAREN
 
@@ -47,12 +49,13 @@ PARTICIPANTS_NAME.1: "participants"|"subjects"|"controls"|"patients"|"volunteers
     |"individuals"|"adults"|"children"|"adolescents"
     |"men"|"women"|"males"|"male"|"females"|"female"
 
-SUBGROUP_NAME: "females"|"female"|"males"|"male"
+SUBGROUP_NAME: "females"|"female"|"males"|"male"|"women"|"woman"|"men"|"man"
 
 ADJ.1: "healthy"
 _SEP: ","|";"|"and"
 _PARENTHESES: /\([^)]*\)/
-_TOKEN: /\b\w+\b/
+_WORD: /\b\w+\b/
+_ALPHA_WORD: /\b[^\W\d_]+\b/
 _SINGLE_RPAREN: /[)]/
 _DASH: "-"|"–"|"—"|"‒"|"―"
 LPAREN: "("
