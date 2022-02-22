@@ -290,7 +290,7 @@ class Extractor:
         for match in re.finditer(r"(\([^)]+\))", text[start_pos:end_pos]):
             transformer = ParticipantsTransformer(start_pos + match.start(1))
             extracted = transformer.transform(
-                self._details_parser.parse(match.group(1))
+                self._details_parser.parse(match.group(1).lower())
             )
             if extracted:
                 all_extracted.extend(extracted.details)
@@ -312,10 +312,9 @@ class Extractor:
             for part, part_start, part_end in all_parts:
                 transformer = ParticipantsTransformer(part_start)
                 try:
-                    print(part)
                     extracted = resolve_n_participants(
                         transformer.transform(
-                            self._participants_parser.parse(part)
+                            self._participants_parser.parse(part.lower())
                         )
                     )
                 except Exception:

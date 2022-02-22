@@ -13,7 +13,7 @@ there were 21 participants (something, age 12 - 89 years, 8 males) and some  hea
 """
 text = doc["text"]
 extractor = Extractor()
-extracted = extractor.extract_from_text(text.lower())
+extracted = extractor.extract_from_text(text)
 list(map(print, map(str, extracted)))
 # print(ie.ParticipantsGroup(*astuple(extracted[0])))
 # pprint.pprint(extractor.extract_from_text(text))
