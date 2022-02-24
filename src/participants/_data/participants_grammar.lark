@@ -14,12 +14,16 @@ participants_subgroup.1: number SUBGROUP_NAME
 ?age_info.1: age_mean_std | age_mean | age_median | age_range
 
 age_mean_std: _ALPHA_WORD* NUMBER "±" NUMBER "years" ["old"]
+    | ["mean" | "average"] "age" NUMBER "±" NUMBER
 
-age_mean: [ "mean" ] "age" NUMBER "years" ["old"]
+age_mean: [ "mean" | "average" ] "age" NUMBER "years" ["old"]
+    | ["mean"] "age" NUMBER
 
 age_median: "median" ["age"] NUMBER "years" ["old"]
 
 age_range:  _ALPHA_WORD* INT _DASH INT "years" ["old"]
+    | ("age" | "ages") ["range"] INT _DASH INT
+    | "range" INT _DASH INT
 
 extra_participants_detail: _TOKEN*
 
@@ -46,11 +50,12 @@ TEEN_NAME.1: "ten"|"eleven"|"twelve"|"thirteen"|"fourteen"|"fifteen"
 DOZEN_NAME.1: "twenty"|"thirty"|"forty"|"fifty"|"sixty"|"seventy"|"eighty"
     |"ninety"
 
-PARTICIPANTS_NAME.1: "participants"|"subjects"|"controls"|"patients"|"volunteers"
-    |"individuals"|"adults"|"children"|"adolescents"
-    |"men"|"women"|"males"|"male"|"females"|"female"
+PARTICIPANTS_NAME.1: "participants"|"subjects"|"controls"|"hcs"|"patients"
+    |"volunteers" |"individuals"|"adults"|"children"|"adolescents"|"girls"|"boys"
+    |"men"|"women"|"males"|"male"|"females"|"female"|"students"
 
 SUBGROUP_NAME: "females"|"female"|"males"|"male"|"women"|"woman"|"men"|"man"
+    |"girl"|"girls"|"boy"|"boys"
 
 ADJ.1: "healthy"
 _SEP: ","|";"|"and"

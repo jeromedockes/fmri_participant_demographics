@@ -1,20 +1,45 @@
-import pprint
-from dataclasses import astuple
+from pathlib import Path
+import json
 
 from participants import Extractor, load_docs
-from participants import _information_extraction as ie
 
-doc = load_docs()[0]
-text = """
-
-# Abstract
-
-there were 21 participants (something, age 12 - 89 years, 8 males) and some  healthy new young patients (n=34) and one hundred and twenty-six healthy volunteers (80 females, 90 males, age: 54 ± 3.4 years)
-"""
-text = doc["text"]
 extractor = Extractor()
-extracted = extractor.extract_from_text(text)
-list(map(print, map(str, extracted)))
-# print(ie.ParticipantsGroup(*astuple(extracted[0])))
-# pprint.pprint(extractor.extract_from_text(text))
-# pprint.pprint(extractor._parser.parse(text))
+
+
+def participants_to_labels(detailed_participant_group):
+    labels = []
+    group = detailed_participant_group.group
+    labels.append(
+        (
+            group.abs_start_pos,
+            group.abs_end_pos,
+            group.__class__.__name__,
+            str(group),
+        )
+    )
+    for detail in detailed_participant_group.group_details:
+        labels.append(
+            (
+                detail.abs_start_pos,
+                detail.abs_end_pos,
+                detail.__class__.__name__,
+                str(detail),
+            )
+        )
+    return labels
+
+
+result = []
+all_docs = load_docs()[:100]
+for i, doc in enumerate(all_docs):
+    print(f"{i + 1} / {len(all_docs)}", end="\r")
+    extracted = extractor.extract_from_text(doc["text"])
+    # del doc["text"]
+    all_labels = []
+    for participant_group in extracted:
+        all_labels.extend(participants_to_labels(participant_group))
+    doc["labels"] = all_labels
+    result.append(doc)
+
+print()
+Path("/tmp/annotations.json").write_text(json.dumps(result), "utf-8")
