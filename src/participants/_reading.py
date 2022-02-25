@@ -66,6 +66,9 @@ class Token(Node):
         super().__post_init__()
         self.value = raw_value.lower()
 
+    def summary(self):
+        return self.value
+
 
 @dataclasses.dataclass
 class Adjective(Token):
