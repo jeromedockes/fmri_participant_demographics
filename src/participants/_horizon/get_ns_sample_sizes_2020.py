@@ -1,3 +1,4 @@
+# https://github.com/poldracklab/ScanningTheHorizon/blob/09b9f64eda5fc5c82e64679aa33d4c3c2685928b/SampleSize/2020/get_ns_sample_sizes.py
 # get_ns_sample_sizes.py - extract estimated sample size data from neurosynth
 # Tal Yarkoni, 2016
 
