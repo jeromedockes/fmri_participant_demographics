@@ -37,7 +37,7 @@ class ParticipantsGroupInfo:
             details_parts.append(f"mean age = {self.age_mean}")
         if self.age_range is not None:
             low, high = self.age_range
-            details_parts.append(f"age range = {low} — {high}")
+            details_parts.append(f"age range = {low} – {high}")
         details = ", ".join(details_parts)
         return f"{self.count} {self.name} ({details})"
 
@@ -118,6 +118,14 @@ def summarize(extracted_groups: Sequence[_reading.ParticipantsGroup]):
     for group_type, group_mention in kept_groups.items():
         group_info = _summarize_participants_group(group_type, group_mention)
         groups.append(group_info)
+    for group_mention in extracted_groups:
+        group_type = _get_type(group_mention)
+        for group_info in groups:
+            if (
+                group_info.participant_type is group_type
+                and group_info.count == group_mention.group.count.value
+            ):
+                group_info.mentions.append(group_mention)
     participants_info = _summarize_participants(groups)
     return participants_info
 
