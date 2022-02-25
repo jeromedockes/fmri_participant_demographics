@@ -1,9 +1,13 @@
+import re
 import dataclasses
 import enum
 from collections import defaultdict
 from typing import Optional, Tuple, List, Sequence
 
 from participants import _reading
+
+_FEMALES_NAMES = r"\b(?:females?|women|woman|girls?)\b"
+_MALES_NAMES = r"\b(?:males?|men|man|boys?)\b"
 
 
 class ParticipantType(enum.Enum):
@@ -62,7 +66,7 @@ def _group_by_section(
 
 
 def _get_type(participants_group: _reading.DetailedParticipantsGroup):
-    if participants_group.group.name.value in ["hcs", "controls"]:
+    if participants_group.group.name.value in ["hcs", "controls", "students"]:
         return ParticipantType.HEALTHY
     if (
         participants_group.group.adjective is not None
@@ -105,7 +109,7 @@ def summarize(extracted_groups: Sequence[_reading.ParticipantsGroup]):
                     _group_by_section(extracted_groups).values(),
                 ),
             ),
-            key=len
+            key=len,
         )
         if not sections:
             return None
@@ -149,9 +153,9 @@ def _summarize_participants_group(group_type, group_mention):
     info = defaultdict(list)
     for detail in group_mention.group_details:
         if isinstance(detail, _reading.ParticipantsSubGroup):
-            if "female" in detail.name or "women" in detail.name:
+            if re.match(_FEMALES_NAMES, detail.name):
                 info["females_counts"].append(detail.count)
-            elif "male" in detail.name or "men" in detail.name:
+            elif re.match(_MALES_NAMES, detail.name):
                 info["males_counts"].append(detail.count)
         elif isinstance(detail, _reading.AgeMoments):
             info["age_means"].append(detail.mean)
@@ -166,16 +170,16 @@ def _summarize_participants_group(group_type, group_mention):
         males_count = sum(info["males_counts"])
         if "females_counts" not in info:
             females_count = group_mention.group.count.value - males_count
-    assert (
-        females_count is None and males_count is None
-    ) or males_count + females_count == group_mention.group.count.value
+    if (
+        females_count is not None
+        and females_count + males_count != group_mention.group.count.value
+    ):
+        females_count, males_count = None, None
     age_mean = None
-    if "age_means" in info:
-        assert len(info["age_means"]) == 1
+    if "age_means" in info and len(info["age_means"]) == 1:
         age_mean = info["age_means"][0]
     age_range = None
-    if "age_ranges" in info:
-        assert len(info["age_ranges"]) == 1
+    if "age_ranges" in info and len(info["age_ranges"]) == 1:
         age_range = info["age_ranges"][0]
     return ParticipantsGroupInfo(
         group_mention.group.name.value,
