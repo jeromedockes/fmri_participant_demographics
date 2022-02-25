@@ -1,0 +1,13 @@
+# get_ns_sample_sizes.py - extract estimated sample size data from neurosynth
+# Tal Yarkoni, 2016
+
+import re
+
+def estimate_n(text):
+    text = text.lower()
+    matches = re.finditer('[\(\s]+n\s*=\s*(\d+)', text)
+    res = []
+    for m in matches:
+        n = int(m.group(1))
+        res.append((f"n = {n}", n, m.start(), m.end()))
+    return res

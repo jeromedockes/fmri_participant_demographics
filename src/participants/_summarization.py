@@ -44,14 +44,17 @@ class ParticipantsGroupInfo:
 
 @dataclasses.dataclass
 class ParticipantsInfo:
-    count: int
+    count: Optional[int]
     females_count: Optional[int]
     males_count: Optional[int]
     age_mean: Optional[float]
     age_range: Optional[Tuple[float]]
     groups: List[ParticipantsGroupInfo]
+    discarded_groups: List[_reading.DetailedParticipantsGroup]
 
     def __str__(self):
+        if self.count is None:
+            return "Empty participants info"
         return f"{self.count} participants: {list(map(str, self.groups))}"
 
 
@@ -112,25 +115,35 @@ def summarize(extracted_groups: Sequence[_reading.ParticipantsGroup]):
             key=len,
         )
         if not sections:
-            return None
-        kept_groups = sections[-1]
+            kept_groups = {}
+        else:
+            kept_groups = sections[-1]
     groups = []
     for group_type, group_mention in kept_groups.items():
         group_info = _summarize_participants_group(group_type, group_mention)
         groups.append(group_info)
+    discarded_groups = []
     for group_mention in extracted_groups:
         group_type = _get_type(group_mention)
+        discarded = True
         for group_info in groups:
             if (
                 group_info.participant_type is group_type
                 and group_info.count == group_mention.group.count.value
             ):
                 group_info.mentions.append(group_mention)
-    participants_info = _summarize_participants(groups)
+                discarded = False
+        if discarded:
+            discarded_groups.append(group_mention)
+    participants_info = _summarize_participants(groups, discarded_groups)
     return participants_info
 
 
-def _summarize_participants(groups):
+def _summarize_participants(groups, discarded_groups):
+    if not groups:
+        return ParticipantsInfo(
+            None, None, None, None, None, [], discarded_groups
+        )
     count = sum(g.count for g in groups)
     try:
         females_count = sum(g.females_count for g in groups)
@@ -153,7 +166,13 @@ def _summarize_participants(groups):
     except TypeError:
         age_range = None
     return ParticipantsInfo(
-        count, females_count, males_count, age_mean, age_range, groups
+        count,
+        females_count,
+        males_count,
+        age_mean,
+        age_range,
+        groups,
+        discarded_groups,
     )
 
 
