@@ -1,0 +1,16 @@
+[
+    {
+        "background_color": "#aec7e8",
+        "color": "#aec7e8",
+        "shortcut_key": "n",
+        "suffix_key": "n",
+        "text": "N participants"
+    },
+    {
+        "background_color": "#ffbb78",
+        "color": "#ffbb78",
+        "shortcut_key": "i",
+        "suffix_key": "i",
+        "text": "N included"
+    }
+]

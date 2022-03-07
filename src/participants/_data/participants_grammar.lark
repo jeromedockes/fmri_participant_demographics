@@ -27,7 +27,7 @@ age_range:  _ALPHA_WORD* INT _DASH INT "years" ["old"]
 
 extra_participants_detail: _TOKEN*
 
-_extra_text: (ADJ|_PARENTHESES|_TOKEN|_SINGLE_RPAREN)*
+_extra_text: (_PARENTHESES|_TOKEN|_SINGLE_RPAREN)*
 _short_extra_text: (ADJ|_PARENTHESES|_WORD|_SINGLE_RPAREN)*
 
 n_value: LPAREN "n" "=" INT RPAREN
@@ -57,7 +57,8 @@ PARTICIPANTS_NAME.1: "participants"|"subjects"|"controls"|"hcs"|"patients"
 SUBGROUP_NAME: "females"|"female"|"males"|"male"|"women"|"woman"|"men"|"man"
     |"girl"|"girls"|"boy"|"boys"
 
-ADJ.1: "healthy"
+ADJ.1: "healthy"|"control"
+
 _SEP: ","|";"|"and"
 _PARENTHESES: /\([^)]*\)/
 _WORD: /\b\w+\b/

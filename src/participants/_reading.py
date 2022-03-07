@@ -18,7 +18,7 @@ _PARTICIPANTS_NAME = (
 )
 
 
-def _get_parser(start, ambiguity) -> Lark:
+def _get_parser(start: str, ambiguity: str) -> Lark:
     grammar = (
         Path(__file__)
         .parent.joinpath("_data", "participants_grammar.lark")
@@ -30,11 +30,11 @@ def _get_parser(start, ambiguity) -> Lark:
     return parser
 
 
-def _get_n_participants_parser():
+def _get_n_participants_parser() -> Lark:
     return _get_parser(start="participants", ambiguity="explicit")
 
 
-def _get_participants_details_parser():
+def _get_participants_details_parser() -> Lark:
     return _get_parser(start="participants_details", ambiguity="resolve")
 
 
@@ -46,15 +46,15 @@ class Node:
     abs_start_pos: int = dataclasses.field(init=False)
     abs_end_pos: int = dataclasses.field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.abs_start_pos = self.pos_offset + self.start_pos
         self.abs_end_pos = self.pos_offset + self.end_pos
 
-    def summary(self):
+    def summary(self) -> str:
         return f"({self.abs_start_pos}, {self.abs_end_pos})"
 
-    def __str__(self):
-        return f"{self.__class__.__name__}: {self.summary()}"
+    def __str__(self) -> str:
+        return f"<{self.__class__.__name__}: {self.summary()}>"
 
 
 @dataclasses.dataclass
@@ -62,11 +62,11 @@ class Token(Node):
     raw_value: dataclasses.InitVar[str]
     value: str = dataclasses.field(init=False)
 
-    def __post_init__(self, raw_value):
+    def __post_init__(self, raw_value: str) -> None:
         super().__post_init__()
         self.value = raw_value.lower()
 
-    def summary(self):
+    def summary(self) -> str:
         return self.value
 
 
@@ -93,95 +93,108 @@ class NValue(Number):
 @dataclasses.dataclass
 class ParticipantsGroup(Node):
     count: Number
-    adjective: Optional[Adjective]
+    adjectives: List[Adjective]
     name: ParticipantsName
 
-    def summary(self):
-        adj = f"{self.adjective.value} " if self.adjective is not None else ""
-        return f"{self.count.value} {adj}{self.name.value}"
+    def summary(self) -> str:
+        adj = " ".join([a.value for a in self.adjectives])
+        return f"{self.count.value} {adj} {self.name.value}"
 
 
 @dataclasses.dataclass
-class ParticipantsSubGroup(Node):
+class ParticipantsDetailsEntry(Node):
+    pass
+
+
+@dataclasses.dataclass
+class ParticipantsSubGroup(ParticipantsDetailsEntry):
     count: Number
     name: ParticipantsName
 
-    def summary(self):
+    def summary(self) -> str:
         return f"{self.count} {self.name}"
 
 
 @dataclasses.dataclass
-class AgeMoments(Node):
+class AgeMoments(ParticipantsDetailsEntry):
     mean: float
     std: Optional[float]
 
-    def summary(self):
+    def summary(self) -> str:
         std_msg = f" ± {self.std}" if self.std is not None else ""
         return f"{self.mean}{std_msg}"
 
 
 @dataclasses.dataclass
-class AgeMedian(Node):
+class AgeMedian(ParticipantsDetailsEntry):
     median: float
 
-    def summary(self):
+    def summary(self) -> str:
         return f"{self.median}"
 
 
 @dataclasses.dataclass
-class AgeRange(Node):
+class AgeRange(ParticipantsDetailsEntry):
     low: float
     high: float
 
-    def summary(self):
+    def summary(self) -> str:
         return f"{self.low} – {self.high}"
 
 
 @dataclasses.dataclass
 class ParticipantsDetails(Node):
-    details: List[Union[ParticipantsSubGroup, AgeMoments, AgeMedian, AgeRange]]
+    details: List[ParticipantsDetailsEntry]
 
-    def summary(self):
+    def summary(self) -> str:
         return str(list(map(str, self.details)))
 
 
 @dataclasses.dataclass
-class DetailedParticipantsGroup:
-    group: ParticipantsGroup
-    group_details: ParticipantsDetails
+class DetailedParticipantsGroup(ParticipantsGroup):
+    details: List[ParticipantsDetailsEntry]
     section_name: str
 
-    def __str__(self):
-        details = ", ".join(map(str, self.group_details))
-        return (
-            f'{self.__class__.__name__} (in "{self.section_name}"): '
-            f"{self.group.summary()} [{details}]"
-        )
+    def __init__(
+        self,
+        group: ParticipantsGroup,
+        details: List[ParticipantsDetailsEntry],
+        section_name: str,
+    ) -> None:
+        self.pos_offset = group.pos_offset
+        self.start_pos = group.start_pos
+        self.end_pos = group.end_pos
+        self.abs_start_pos = group.abs_start_pos
+        self.abs_end_pos = group.abs_end_pos
+        self.count = group.count
+        self.adjectives = group.adjectives
+        self.name = group.name
+        self.details = details
+        self.section_name = section_name
+
+    def summary(self) -> str:
+        group_descr = super().summary()
+        details_descr = ", ".join(map(str, self.details))
+        return f"{group_descr} [{details_descr}]"
 
 
 class ParticipantsTransformer(Transformer):
-    def __init__(self, pos_offset, *args, **kwargs):
+    def __init__(self, pos_offset, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.pos_offset = pos_offset
 
-    def participants_n(self, tree):
-        if len(tree) == 2:
-            name, count = tree
-            adj = None
-            start_pos = name.start_pos
+    def participants_n(self, tree) -> ParticipantsGroup:
+        *adj, name, count = tree
+        if adj:
+            start_pos = adj[0].start_pos
         else:
-            adj, name, count = tree
-            start_pos = adj.start_pos
+            start_pos = name.start_pos
         return ParticipantsGroup(
             self.pos_offset, start_pos, count.end_pos, count, adj, name
         )
 
-    def participants_inline(self, tree):
-        if len(tree) == 2:
-            count, name = tree
-            adj = None
-        else:
-            count, adj, name = tree
+    def participants_inline(self, tree) -> ParticipantsGroup:
+        count, *adj, name = tree
         return ParticipantsGroup(
             self.pos_offset,
             count.start_pos,
@@ -191,14 +204,16 @@ class ParticipantsTransformer(Transformer):
             name,
         )
 
-    def participants_details(self, tree):
+    def participants_details(
+        self, tree
+    ) -> Optional[List[ParticipantsDetails]]:
         if not tree:
             return None
         start_pos = min(child.start_pos for child in tree)
         end_pos = max(child.end_pos for child in tree)
         return ParticipantsDetails(self.pos_offset, start_pos, end_pos, tree)
 
-    def participants_subgroup(self, tree):
+    def participants_subgroup(self, tree) -> ParticipantsSubGroup:
         count, name = tree
         return ParticipantsSubGroup(
             self.pos_offset,
@@ -208,7 +223,7 @@ class ParticipantsTransformer(Transformer):
             name.value,
         )
 
-    def age_mean_std(self, tree):
+    def age_mean_std(self, tree) -> AgeMoments:
         mean, std = tree
         return AgeMoments(
             self.pos_offset,
@@ -218,7 +233,7 @@ class ParticipantsTransformer(Transformer):
             float(std.value),
         )
 
-    def age_mean(self, tree):
+    def age_mean(self, tree) -> AgeMoments:
         (mean,) = tree
         return AgeMoments(
             self.pos_offset,
@@ -228,7 +243,7 @@ class ParticipantsTransformer(Transformer):
             None,
         )
 
-    def age_median(self, tree):
+    def age_median(self, tree) -> AgeMedian:
         (median,) = tree
         return AgeMedian(
             self.pos_offset,
@@ -237,7 +252,7 @@ class ParticipantsTransformer(Transformer):
             float(median.value),
         )
 
-    def age_range(self, tree):
+    def age_range(self, tree) -> AgeRange:
         low, high = tree
         return AgeRange(
             self.pos_offset,
@@ -247,14 +262,14 @@ class ParticipantsTransformer(Transformer):
             float(high.value),
         )
 
-    def extra_participants_detail(self, tree):
+    def extra_participants_detail(self, tree) -> type(Discard):
         return Discard
 
-    def n_value(self, tree):
+    def n_value(self, tree) -> NValue:
         lp, n, rp = tree
         return NValue(self.pos_offset, lp.start_pos, rp.end_pos, n.value)
 
-    def hundred_text_number(self, tree):
+    def hundred_text_number(self, tree) -> Number:
         hundred_part, rest = tree
         if rest is None:
             value = 100 * hundred_part.value
@@ -264,7 +279,7 @@ class ParticipantsTransformer(Transformer):
             end_pos = rest.end_pos
         return Number(self.pos_offset, hundred_part.start_pos, end_pos, value)
 
-    def dozen_text_number(self, tree):
+    def dozen_text_number(self, tree) -> Number:
         if len(tree) == 1:
             teen = tree[0]
             return teen
@@ -277,7 +292,7 @@ class ParticipantsTransformer(Transformer):
             end_pos = unit.end_pos
         return Number(self.pos_offset, dozen.start_pos, end_pos, value)
 
-    def UNIT_NAME(self, tree):
+    def UNIT_NAME(self, tree) -> Number:
         value = (
             "zero one two three four five six seven eight nine".split().index(
                 tree.value.lower()
@@ -287,7 +302,7 @@ class ParticipantsTransformer(Transformer):
             self.pos_offset, tree.start_pos, tree.end_pos, int(value)
         )
 
-    def TEEN_NAME(self, tree):
+    def TEEN_NAME(self, tree) -> Number:
         value = (
             "ten eleven twelve thirteen fourteen fifteen sixteen "
             "seventeen eighteen nineteen".split().index(tree.value.lower())
@@ -295,30 +310,30 @@ class ParticipantsTransformer(Transformer):
         )
         return Number(self.pos_offset, tree.start_pos, tree.end_pos, value)
 
-    def DOZEN_NAME(self, tree):
+    def DOZEN_NAME(self, tree) -> Number:
         value = (
             "zero ten twenty thirty forty fifty sixty "
             "seventy eighty ninety".split().index(tree.value.lower())
         ) * 10
         return Number(self.pos_offset, tree.start_pos, tree.end_pos, value)
 
-    def INT(self, tree):
+    def INT(self, tree) -> Number:
         return Number(
             self.pos_offset, tree.start_pos, tree.end_pos, int(tree.value)
         )
 
-    def PARTICIPANTS_NAME(self, tree):
+    def PARTICIPANTS_NAME(self, tree) -> ParticipantsName:
         return ParticipantsName(
             self.pos_offset, tree.start_pos, tree.end_pos, tree.value
         )
 
-    def ADJ(self, tree):
+    def ADJ(self, tree) -> Adjective:
         return Adjective(
             self.pos_offset, tree.start_pos, tree.end_pos, tree.value
         )
 
 
-def resolve_n_participants(transformed_text):
+def resolve_n_participants(transformed_text) -> List[ParticipantsGroup]:
     if not hasattr(transformed_text, "children"):
         return transformed_text
     return sorted(
@@ -328,11 +343,13 @@ def resolve_n_participants(transformed_text):
 
 
 class Extractor:
-    def __init__(self):
+    def __init__(self) -> None:
         self._participants_parser = _get_n_participants_parser()
         self._details_parser = _get_participants_details_parser()
 
-    def extract_details(self, text, start_pos, end_pos):
+    def extract_details(
+        self, text: str, start_pos: int, end_pos: int
+    ) -> List[ParticipantsDetails]:
         all_extracted = []
         end_pos = min(end_pos, start_pos + _MAX_LEN_DETAILS)
         for match in re.finditer(r"(\([^)]+\))", text[start_pos:end_pos]):
@@ -347,7 +364,7 @@ class Extractor:
                 all_extracted.extend(extracted.details)
         return all_extracted
 
-    def extract_from_text(self, text):
+    def extract_from_text(self, text: str) -> List[DetailedParticipantsGroup]:
         all_sections = _get_participants_sections(text)
         result = []
         for (
@@ -431,7 +448,7 @@ def _get_participants_sections(
     return sections
 
 
-def _finditer(pattern, string):
+def _finditer(pattern: re.Pattern, string: str):
     start = 0
     while start < len(string):
         match = pattern.match(string, start)

@@ -29,6 +29,10 @@ class ParticipantsGroupInfo:
     mentions: List[_reading.DetailedParticipantsGroup]
 
     def __str__(self):
+        if self.participant_type is ParticipantType.UNKNOWN:
+            p_type = ""
+        else:
+            p_type = f" ({self.participant_type.name})"
         details_parts = []
         if self.females_count is not None:
             details_parts.append(f"{self.females_count} females")
@@ -39,7 +43,7 @@ class ParticipantsGroupInfo:
             low, high = self.age_range
             details_parts.append(f"age range = {low} – {high}")
         details = ", ".join(details_parts)
-        return f"{self.count} {self.name} ({details})"
+        return f"<{self.count} {self.name}{p_type} ({details})>"
 
 
 @dataclasses.dataclass
@@ -50,12 +54,13 @@ class ParticipantsInfo:
     age_mean: Optional[float]
     age_range: Optional[Tuple[float]]
     groups: List[ParticipantsGroupInfo]
-    discarded_groups: List[_reading.DetailedParticipantsGroup]
+    discarded_group_mentions: List[_reading.DetailedParticipantsGroup]
 
     def __str__(self):
         if self.count is None:
-            return "Empty participants info"
-        return f"{self.count} participants: {list(map(str, self.groups))}"
+            return "<Empty participants info>"
+        groups = ", ".join(map(str, self.groups))
+        return f"<{self.count} participants: [{groups}]>"
 
 
 def _group_by_section(
@@ -63,20 +68,18 @@ def _group_by_section(
 ):
     sections = defaultdict(list)
     for participant_group in extracted_groups:
-        if participant_group.group_details:
+        if participant_group.details:
             sections[participant_group.section_name].append(participant_group)
     return dict(sections)
 
 
 def _get_type(participants_group: _reading.DetailedParticipantsGroup):
-    if participants_group.group.name.value in ["hcs", "controls", "students"]:
+    if participants_group.name.value in ["hcs", "controls", "students"]:
         return ParticipantType.HEALTHY
-    if (
-        participants_group.group.adjective is not None
-        and participants_group.group.adjective.value == "healthy"
-    ):
-        return ParticipantType.HEALTHY
-    if participants_group.group.name.value in ["patients"]:
+    for adj in participants_group.adjectives:
+        if adj.value in ["healthy", "control"]:
+            return ParticipantType.HEALTHY
+    if participants_group.name.value in ["patients"]:
         return ParticipantType.PATIENT
     return ParticipantType.UNKNOWN
 
@@ -129,7 +132,7 @@ def summarize(extracted_groups: Sequence[_reading.ParticipantsGroup]):
         for group_info in groups:
             if (
                 group_info.participant_type is group_type
-                and group_info.count == group_mention.group.count.value
+                and group_info.count == group_mention.count.value
             ):
                 group_info.mentions.append(group_mention)
                 discarded = False
@@ -178,7 +181,7 @@ def _summarize_participants(groups, discarded_groups):
 
 def _summarize_participants_group(group_type, group_mention):
     info = defaultdict(list)
-    for detail in group_mention.group_details:
+    for detail in group_mention.details:
         if isinstance(detail, _reading.ParticipantsSubGroup):
             if re.match(_FEMALES_NAMES, detail.name):
                 info["females_counts"].append(detail.count)
@@ -192,14 +195,14 @@ def _summarize_participants_group(group_type, group_mention):
     if "females_counts" in info:
         females_count = sum(info["females_counts"])
         if "males_counts" not in info:
-            males_count = group_mention.group.count.value - females_count
+            males_count = group_mention.count.value - females_count
     if "males_counts" in info:
         males_count = sum(info["males_counts"])
         if "females_counts" not in info:
-            females_count = group_mention.group.count.value - males_count
+            females_count = group_mention.count.value - males_count
     if (
         females_count is not None
-        and females_count + males_count != group_mention.group.count.value
+        and females_count + males_count != group_mention.count.value
     ):
         females_count, males_count = None, None
     age_mean = None
@@ -209,9 +212,9 @@ def _summarize_participants_group(group_type, group_mention):
     if "age_ranges" in info and len(info["age_ranges"]) == 1:
         age_range = info["age_ranges"][0]
     return ParticipantsGroupInfo(
-        group_mention.group.name.value,
+        group_mention.name.value,
         group_type,
-        group_mention.group.count.value,
+        group_mention.count.value,
         females_count,
         males_count,
         age_mean,

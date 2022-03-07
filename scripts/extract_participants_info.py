@@ -11,13 +11,13 @@ def _labels_from_group_mention(group_mention, discarded):
     labels = []
     labels.append(
         (
-            group_mention.group.abs_start_pos,
-            group_mention.group.abs_end_pos,
-            prefix + group_mention.group.__class__.__name__,
-            str(group_mention.group),
+            group_mention.abs_start_pos,
+            group_mention.abs_end_pos,
+            prefix + group_mention.__class__.__name__,
+            str(group_mention),
         )
     )
-    for detail in group_mention.group_details:
+    for detail in group_mention.details:
         labels.append(
             (
                 detail.abs_start_pos,
@@ -45,7 +45,7 @@ def participants_to_labels(participants_info):
     for group in participants_info.groups:
         for mention in group.mentions:
             labels.extend(_labels_from_group_mention(mention, False))
-    for discarded_group_mention in participants_info.discarded_groups:
+    for discarded_group_mention in participants_info.discarded_group_mentions:
         labels.extend(
             _labels_from_group_mention(discarded_group_mention, True)
         )
