@@ -5,7 +5,7 @@ from sklearn import metrics
 from matplotlib import pyplot as plt
 
 from participants import _utils, _horizon
-from participants import Extractor, load_docs, summarize
+from participants import n_participants_from_labelbuddy_docs, load_docs
 
 
 annotations = json.loads(
@@ -38,16 +38,18 @@ for doc in annotations:
 
 annotated_n = pd.Series(annotated_n).dropna()
 
-extracted_n = {}
+if False:
+    extracted_n = n_participants_from_labelbuddy_docs(
+        [all_docs[pmcid] for pmcid in annotated_n.index]
+    )
+    extracted_n = pd.Series(extracted_n, index=annotated_n.index)
 
-extractor = Extractor()
-for pmcid in annotated_n.index:
-    text = all_docs[pmcid]["text"]
-    extracted = summarize(extractor.extract_from_text(text))
-    extracted_n[pmcid] = extracted.count
-    # extracted_n[pmcid] = _horizon._extract.extract(all_docs[pmcid])
+else:
+    extracted_n = _horizon.n_participants_from_labelbuddy_docs(
+        all_docs[pmcid] for pmcid in annotated_n.index
+    )
+    extracted_n = pd.Series(extracted_n, index=annotated_n.index)
 
-extracted_n = pd.Series(extracted_n)
 kept = (annotated_n < annotated_n.quantile(0.9)) & (extracted_n.notnull())
 # kept = extracted_n.notnull()
 print(f"{kept.sum()} / {len(annotated_n)} found")

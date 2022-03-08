@@ -1,4 +1,3 @@
-from participants._horizon._extract import extract
-from participants._horizon.get_ns_sample_sizes import estimate_n
+from participants._horizon._information_extraction import n_participants_from_labelbuddy_docs
 
-__all__ = ["extract", "estimate_n"]
+__all__ = ["n_participants_from_labelbuddy_docs"]

@@ -342,7 +342,7 @@ def resolve_n_participants(transformed_text) -> ParticipantsGroup:
     )[0]
 
 
-class Extractor:
+class Reader:
     def __init__(self) -> None:
         self._participants_parser = _get_n_participants_parser()
         self._details_parser = _get_participants_details_parser()

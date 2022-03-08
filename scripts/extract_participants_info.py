@@ -1,9 +1,9 @@
 from pathlib import Path
 import json
 
-from participants import Extractor, load_docs, summarize
+from participants import Reader, load_docs, summarize
 
-extractor = Extractor()
+extractor = Reader()
 
 
 def _labels_from_group_mention(group_mention, discarded):
