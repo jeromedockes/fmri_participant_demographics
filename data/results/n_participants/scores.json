@@ -1,0 +1,38 @@
+{
+    "participants_demographics": {
+        "remove_outliers_False": {
+            "n_detections": 22,
+            "n_annotations": 39,
+            "r2_score": 0.9920662809732244,
+            "mean_absolute_error": 2.772727272727273,
+            "median_absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.04697898680703401
+        },
+        "remove_outliers_True": {
+            "n_detections": 20,
+            "n_annotations": 35,
+            "r2_score": 0.9764615772611364,
+            "mean_absolute_error": 0.8,
+            "median_absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.04197860962566845
+        }
+    },
+    "scanning_horizon": {
+        "remove_outliers_False": {
+            "n_detections": 13,
+            "n_annotations": 39,
+            "r2_score": 0.8237830383873348,
+            "mean_absolute_error": 31.23076923076923,
+            "median_absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.3408200854374109
+        },
+        "remove_outliers_True": {
+            "n_detections": 9,
+            "n_annotations": 35,
+            "r2_score": -2.1256412360980015,
+            "mean_absolute_error": 23.22222222222222,
+            "median_absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.377544721110743
+        }
+    }
+}
