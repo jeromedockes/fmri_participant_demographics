@@ -2,7 +2,7 @@ import re
 import dataclasses
 import enum
 from collections import defaultdict
-from typing import Optional, Tuple, List, Sequence
+from typing import Optional, Tuple, List, Sequence, Dict, Any
 
 from participants import _reading
 
@@ -22,13 +22,12 @@ class ParticipantsGroupInfo:
     participant_type: ParticipantType
     count: int
     females_count: Optional[int]
-    females_count: Optional[int]
     males_count: Optional[int]
     age_mean: Optional[float]
-    age_range: Optional[Tuple[float]]
+    age_range: Optional[Tuple[float, float]]
     mentions: List[_reading.DetailedParticipantsGroup]
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.participant_type is ParticipantType.UNKNOWN:
             p_type = ""
         else:
@@ -52,11 +51,11 @@ class ParticipantsInfo:
     females_count: Optional[int]
     males_count: Optional[int]
     age_mean: Optional[float]
-    age_range: Optional[Tuple[float]]
+    age_range: Optional[Tuple[float, float]]
     groups: List[ParticipantsGroupInfo]
     discarded_group_mentions: List[_reading.DetailedParticipantsGroup]
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.count is None:
             return "<Empty participants info>"
         groups = ", ".join(map(str, self.groups))
@@ -65,7 +64,7 @@ class ParticipantsInfo:
 
 def _group_by_section(
     extracted_groups: Sequence[_reading.DetailedParticipantsGroup],
-):
+) -> Dict[str, List[_reading.DetailedParticipantsGroup]]:
     sections = defaultdict(list)
     for participant_group in extracted_groups:
         if participant_group.details:
@@ -73,7 +72,9 @@ def _group_by_section(
     return dict(sections)
 
 
-def _get_type(participants_group: _reading.DetailedParticipantsGroup):
+def _get_type(
+    participants_group: _reading.DetailedParticipantsGroup,
+) -> ParticipantType:
     if participants_group.name.value in ["hcs", "controls", "students"]:
         return ParticipantType.HEALTHY
     for adj in participants_group.adjectives:
@@ -86,24 +87,26 @@ def _get_type(participants_group: _reading.DetailedParticipantsGroup):
 
 def _summarize_section(
     section_groups: Sequence[_reading.DetailedParticipantsGroup],
-):
+) -> Dict[ParticipantType, _reading.DetailedParticipantsGroup]:
     participant_types = defaultdict(list)
     for group in section_groups:
         participant_types[_get_type(group)].append(group)
     if not participant_types:
-        return None
+        return {}
     for groups in participant_types.values():
         if len(groups) > 1:
-            return None
+            return {}
     if (
         ParticipantType.UNKNOWN in participant_types
         and len(participant_types) > 1
     ):
-        return None
+        return {}
     return {k: v[0] for k, v in participant_types.items()}
 
 
-def summarize(extracted_groups: Sequence[_reading.ParticipantsGroup]):
+def summarize(
+    extracted_groups: Sequence[_reading.DetailedParticipantsGroup],
+) -> ParticipantsInfo:
     if len(extracted_groups) == 1:
         kept_groups = {_get_type(extracted_groups[0]): extracted_groups[0]}
     else:
@@ -142,7 +145,10 @@ def summarize(extracted_groups: Sequence[_reading.ParticipantsGroup]):
     return participants_info
 
 
-def _summarize_participants(groups, discarded_groups):
+def _summarize_participants(
+    groups: List[ParticipantsGroupInfo],
+    discarded_groups: List[_reading.DetailedParticipantsGroup],
+) -> ParticipantsInfo:
     if not groups:
         return ParticipantsInfo(
             None, None, None, None, None, [], discarded_groups
@@ -157,14 +163,14 @@ def _summarize_participants(groups, discarded_groups):
     except TypeError:
         males_count = None
     try:
-        age_mean = sum(g.age_mean * g.count for g in groups) / sum(
-            g.count for g in groups
-        )
+        age_mean = sum(
+            g.age_mean * g.count for g in groups  # type: ignore
+        ) / sum(g.count for g in groups)
     except TypeError:
         age_mean = None
     try:
-        age_min = min(g.age_range[0] for g in groups)
-        age_max = max(g.age_range[1] for g in groups)
+        age_min = min(g.age_range[0] for g in groups)  # type: ignore
+        age_max = max(g.age_range[1] for g in groups)  # type: ignore
         age_range = (age_min, age_max)
     except TypeError:
         age_range = None
@@ -179,8 +185,11 @@ def _summarize_participants(groups, discarded_groups):
     )
 
 
-def _summarize_participants_group(group_type, group_mention):
-    info = defaultdict(list)
+def _summarize_participants_group(
+    group_type: ParticipantType,
+    group_mention: _reading.DetailedParticipantsGroup,
+) -> ParticipantsGroupInfo:
+    info: Dict[str, Any] = defaultdict(list)
     for detail in group_mention.details:
         if isinstance(detail, _reading.ParticipantsSubGroup):
             if re.match(_FEMALES_NAMES, detail.name):
@@ -195,13 +204,16 @@ def _summarize_participants_group(group_type, group_mention):
     if "females_counts" in info:
         females_count = sum(info["females_counts"])
         if "males_counts" not in info:
+            assert females_count is not None
             males_count = group_mention.count.value - females_count
     if "males_counts" in info:
         males_count = sum(info["males_counts"])
+        assert males_count is not None
         if "females_counts" not in info:
             females_count = group_mention.count.value - males_count
     if (
         females_count is not None
+        and males_count is not None
         and females_count + males_count != group_mention.count.value
     ):
         females_count, males_count = None, None

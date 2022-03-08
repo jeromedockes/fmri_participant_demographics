@@ -4,7 +4,7 @@ import json
 from typing import List, Dict, Any
 
 
-def get_data_dir() -> Path():
+def get_data_dir() -> Path:
     data_dir = os.environ.get("PARTICIPANTS_DATA_DIR")
     if data_dir is not None:
         return Path(data_dir)

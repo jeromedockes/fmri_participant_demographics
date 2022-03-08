@@ -1,9 +1,11 @@
 from pathlib import Path
 import dataclasses
 import re
-from typing import List, Optional, Union, Tuple
+from typing import List, Optional, Union, Tuple, Any, NewType
 
 from lark import Lark, Transformer, Discard
+
+DiscardType = Any
 
 _MAX_LEN = 100
 _MAX_LEN_DETAILS = 150
@@ -50,11 +52,11 @@ class Node:
         self.abs_start_pos = self.pos_offset + self.start_pos
         self.abs_end_pos = self.pos_offset + self.end_pos
 
-    def summary(self) -> str:
+    def description(self) -> str:
         return f"({self.abs_start_pos}, {self.abs_end_pos})"
 
     def __str__(self) -> str:
-        return f"<{self.__class__.__name__}: {self.summary()}>"
+        return f"<{self.__class__.__name__}: {self.description()}>"
 
 
 @dataclasses.dataclass
@@ -62,11 +64,11 @@ class Token(Node):
     raw_value: dataclasses.InitVar[str]
     value: str = dataclasses.field(init=False)
 
-    def __post_init__(self, raw_value: str) -> None:
+    def __post_init__(self, raw_value: str) -> None:  # type: ignore
         super().__post_init__()
         self.value = raw_value.lower()
 
-    def summary(self) -> str:
+    def description(self) -> str:
         return self.value
 
 
@@ -96,7 +98,7 @@ class ParticipantsGroup(Node):
     adjectives: List[Adjective]
     name: ParticipantsName
 
-    def summary(self) -> str:
+    def description(self) -> str:
         adj = " ".join([a.value for a in self.adjectives])
         return f"{self.count.value} {adj} {self.name.value}"
 
@@ -108,10 +110,10 @@ class ParticipantsDetailsEntry(Node):
 
 @dataclasses.dataclass
 class ParticipantsSubGroup(ParticipantsDetailsEntry):
-    count: Number
-    name: ParticipantsName
+    count: int
+    name: str
 
-    def summary(self) -> str:
+    def description(self) -> str:
         return f"{self.count} {self.name}"
 
 
@@ -120,7 +122,7 @@ class AgeMoments(ParticipantsDetailsEntry):
     mean: float
     std: Optional[float]
 
-    def summary(self) -> str:
+    def description(self) -> str:
         std_msg = f" ± {self.std}" if self.std is not None else ""
         return f"{self.mean}{std_msg}"
 
@@ -129,7 +131,7 @@ class AgeMoments(ParticipantsDetailsEntry):
 class AgeMedian(ParticipantsDetailsEntry):
     median: float
 
-    def summary(self) -> str:
+    def description(self) -> str:
         return f"{self.median}"
 
 
@@ -138,7 +140,7 @@ class AgeRange(ParticipantsDetailsEntry):
     low: float
     high: float
 
-    def summary(self) -> str:
+    def description(self) -> str:
         return f"{self.low} – {self.high}"
 
 
@@ -146,7 +148,7 @@ class AgeRange(ParticipantsDetailsEntry):
 class ParticipantsDetails(Node):
     details: List[ParticipantsDetailsEntry]
 
-    def summary(self) -> str:
+    def description(self) -> str:
         return str(list(map(str, self.details)))
 
 
@@ -172,8 +174,8 @@ class DetailedParticipantsGroup(ParticipantsGroup):
         self.details = details
         self.section_name = section_name
 
-    def summary(self) -> str:
-        group_descr = super().summary()
+    def description(self) -> str:
+        group_descr = super().description()
         details_descr = ", ".join(map(str, self.details))
         return f"{group_descr} [{details_descr}]"
 
@@ -204,9 +206,7 @@ class ParticipantsTransformer(Transformer):
             name,
         )
 
-    def participants_details(
-        self, tree
-    ) -> Optional[List[ParticipantsDetails]]:
+    def participants_details(self, tree) -> Optional[ParticipantsDetails]:
         if not tree:
             return None
         start_pos = min(child.start_pos for child in tree)
@@ -262,7 +262,7 @@ class ParticipantsTransformer(Transformer):
             float(high.value),
         )
 
-    def extra_participants_detail(self, tree) -> type(Discard):
+    def extra_participants_detail(self, tree) -> DiscardType:
         return Discard
 
     def n_value(self, tree) -> NValue:
@@ -333,7 +333,7 @@ class ParticipantsTransformer(Transformer):
         )
 
 
-def resolve_n_participants(transformed_text) -> List[ParticipantsGroup]:
+def resolve_n_participants(transformed_text) -> ParticipantsGroup:
     if not hasattr(transformed_text, "children"):
         return transformed_text
     return sorted(
@@ -349,7 +349,7 @@ class Extractor:
 
     def extract_details(
         self, text: str, start_pos: int, end_pos: int
-    ) -> List[ParticipantsDetails]:
+    ) -> List[ParticipantsDetailsEntry]:
         all_extracted = []
         end_pos = min(end_pos, start_pos + _MAX_LEN_DETAILS)
         for match in re.finditer(r"(\([^)]+\))", text[start_pos:end_pos]):
@@ -422,7 +422,7 @@ class Extractor:
 def _get_participants_sections(
     article_text: str,
 ) -> List[Tuple[str, str, int, int]]:
-    sections = []
+    sections: List[Tuple[str, str, int, int]] = []
     start = 0
     sec_pat = re.compile(
         rf"^(#+) (.*{_PARTICIPANTS_SECTIONS}.*)$", flags=re.I | re.MULTILINE
