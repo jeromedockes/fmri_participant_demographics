@@ -1,4 +1,4 @@
-from participants import _reading, _summarization
+from participants_demographics import _reading, _summarization
 
 
 def n_participants_from_labelbuddy_docs(documents):

@@ -4,7 +4,7 @@ import enum
 from collections import defaultdict
 from typing import Optional, Tuple, List, Sequence, Dict, Any
 
-from participants import _reading
+from participants_demographics import _reading
 
 _FEMALES_NAMES = r"\b(?:females?|women|woman|girls?)\b"
 _MALES_NAMES = r"\b(?:males?|men|man|boys?)\b"

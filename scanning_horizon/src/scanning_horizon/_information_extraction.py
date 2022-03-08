@@ -1,4 +1,4 @@
-from participants._horizon._get_ns_sample_sizes import estimate_n
+from scanning_horizon import _get_ns_sample_sizes
 
 
 def n_participants_from_labelbuddy_docs(documents):
@@ -12,7 +12,7 @@ def n_participants_from_labelbuddy_docs(documents):
 def n_participants_from_texts(article_texts):
     result = []
     for text in article_texts:
-        groups = estimate_n(text)
+        groups = _get_ns_sample_sizes.estimate_n(text)
         if not groups:
             result.append(None)
         else:

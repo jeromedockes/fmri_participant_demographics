@@ -5,10 +5,10 @@ from typing import List, Dict, Any
 
 
 def get_data_dir() -> Path:
-    data_dir = os.environ.get("PARTICIPANTS_DATA_DIR")
+    data_dir = os.environ.get("PARTICIPANTS_DEMOGRAPHICS_DATA_DIR")
     if data_dir is not None:
         return Path(data_dir)
-    return Path(__file__).parents[2].joinpath("data")
+    return Path(__file__).parents[1].joinpath("data")
 
 
 def load_docs() -> List[Dict[str, Any]]:

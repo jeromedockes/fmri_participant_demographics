@@ -4,18 +4,19 @@ import pandas as pd
 from sklearn import metrics
 from matplotlib import pyplot as plt
 
-from participants import _utils, _horizon
-from participants import n_participants_from_labelbuddy_docs, load_docs
+import participants_demographics
+import scanning_horizon
+import utils
 
 
 annotations = json.loads(
-    _utils.get_data_dir()
+    utils.get_data_dir()
     .joinpath("annotations", "annotations_jerome.json")
     .read_text("utf-8")
 )
 
 
-all_docs = {doc["meta"]["pmcid"]: doc for doc in load_docs()}
+all_docs = {doc["meta"]["pmcid"]: doc for doc in utils.load_docs()}
 
 annotated_n = {}
 for doc in annotations:
@@ -38,14 +39,16 @@ for doc in annotations:
 
 annotated_n = pd.Series(annotated_n).dropna()
 
-if False:
-    extracted_n = n_participants_from_labelbuddy_docs(
-        [all_docs[pmcid] for pmcid in annotated_n.index]
+if True:
+    extracted_n = (
+        participants_demographics.n_participants_from_labelbuddy_docs(
+            [all_docs[pmcid] for pmcid in annotated_n.index]
+        )
     )
     extracted_n = pd.Series(extracted_n, index=annotated_n.index)
 
 else:
-    extracted_n = _horizon.n_participants_from_labelbuddy_docs(
+    extracted_n = scanning_horizon.n_participants_from_labelbuddy_docs(
         all_docs[pmcid] for pmcid in annotated_n.index
     )
     extracted_n = pd.Series(extracted_n, index=annotated_n.index)
