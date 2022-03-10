@@ -32,13 +32,11 @@ def load_docs() -> Dict[int, Dict[str, Any]]:
 
 def load_annotations(annotations_file_name) -> Dict[int, Dict[str, Any]]:
     all_annotations = {}
-    with open(
-        get_data_dir().joinpath("annotations", annotations_file_name),
-        encoding="utf-8",
-    ) as annotations_f:
-        for doc_json in annotations_f:
-            doc = json.loads(doc_json)
-            all_annotations[doc["meta"]["pmcid"]] = doc
+    annotations_file = get_data_dir().joinpath(
+        "annotations", annotations_file_name
+    )
+    for doc in json.loads(annotations_file.read_text("utf-8")):
+        all_annotations[doc["meta"]["pmcid"]] = doc
     return all_annotations
 
 

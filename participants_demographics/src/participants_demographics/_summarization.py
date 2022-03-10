@@ -137,8 +137,12 @@ def summarize(
                 group_info.participant_type is group_type
                 and group_info.count == group_mention.count.value
             ):
-                group_info.mentions.append(group_mention)
                 discarded = False
+                if (
+                    group_info.mentions[0].abs_start_pos
+                    != group_mention.abs_start_pos
+                ):
+                    group_info.mentions.append(group_mention)
         if discarded:
             discarded_groups.append(group_mention)
     participants_info = _summarize_participants(groups, discarded_groups)
