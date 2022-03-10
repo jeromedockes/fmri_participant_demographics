@@ -138,10 +138,7 @@ def summarize(
                 and group_info.count == group_mention.count.value
             ):
                 discarded = False
-                if (
-                    group_info.mentions[0].abs_start_pos
-                    != group_mention.abs_start_pos
-                ):
+                if group_info.mentions[0] != group_mention:
                     group_info.mentions.append(group_mention)
         if discarded:
             discarded_groups.append(group_mention)
