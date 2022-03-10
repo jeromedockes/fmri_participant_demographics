@@ -1,3 +1,8 @@
+import json
+from pathlib import Path
+
+import pandas as pd
+
 from participants_demographics import _reading, _summarization
 
 
@@ -25,9 +30,10 @@ def n_participants_from_texts(article_texts):
 def annotate_labelbuddy_docs(documents):
     extractor = Extractor()
     for i, doc in enumerate(documents):
-        print(f"annotating doc {i}", end="\r")
+        print(f"annotating doc {i}", end="\r", flush=True)
         doc = doc.copy()
         extracted = extractor.extract(doc["text"])
+        breakpoint()
         doc["utf8_text_md5_checksum"] = doc["meta"]["text_md5"]
         doc["labels"] = _participants_to_labels(extracted)
         del doc["short_title"]
@@ -88,3 +94,30 @@ def _extend_labels(nodes_to_add, kind, labels):
                 kind,
                 labels,
             )
+
+
+def extract_from_dataset(input_file: Path, output_file: Path):
+    extractor = Extractor()
+    with open(output_file, "w", encoding="utf-8") as output_f:
+        with open(input_file, newline="", encoding="utf-8") as input_f:
+            all_chunks = pd.read_csv(input_f, chunksize=200, index_col="pmcid")
+            i = 0
+            for chunk in all_chunks:
+                for pmcid, row in chunk.iterrows():
+                    i += 1
+                    print(f"Reading article {i}", end="\r", flush=True)
+                    parts = [f"# {col}\n\n{row[col]}" for col in row.index]
+                    text = "\n".join(parts)
+                    extracted = extractor.extract(text)
+                    output_f.write(
+                        json.dumps(
+                            {
+                                "pmcid": pmcid,
+                                "demographics": json.loads(
+                                    _summarization.to_json(extracted)
+                                ),
+                            }
+                        )
+                    )
+                    output_f.write("\n")
+            print()

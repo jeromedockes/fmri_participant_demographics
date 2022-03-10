@@ -1,3 +1,4 @@
+import json
 import re
 import dataclasses
 import enum
@@ -14,6 +15,13 @@ class ParticipantType(enum.Enum):
     HEALTHY = enum.auto()
     PATIENT = enum.auto()
     UNKNOWN = enum.auto()
+
+
+class _JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, ParticipantType):
+            return obj.name
+        return json.JSONEncoder.default(self, obj)
 
 
 @dataclasses.dataclass
@@ -60,6 +68,10 @@ class ParticipantsInfo:
             return "<Empty participants info>"
         groups = ", ".join(map(str, self.groups))
         return f"<{self.count} participants: [{groups}]>"
+
+
+def to_json(participants_info: ParticipantsInfo) -> str:
+    return json.dumps(dataclasses.asdict(participants_info), cls=_JSONEncoder)
 
 
 def _group_by_section(
