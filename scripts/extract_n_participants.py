@@ -5,7 +5,7 @@ import scanning_horizon
 import utils
 
 
-annotations = utils.load_annotations("annotations_jerome.json")
+annotations = utils.load_annotations("jerome_n_participants.json")
 all_docs = utils.load_docs()
 annotated_n = pd.Series(
     utils.n_participants_from_annotations(annotations, all_docs)

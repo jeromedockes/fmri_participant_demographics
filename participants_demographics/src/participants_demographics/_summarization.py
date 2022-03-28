@@ -76,10 +76,11 @@ def to_json(participants_info: ParticipantsInfo) -> str:
 
 def _group_by_section(
     extracted_groups: Sequence[_reading.DetailedParticipantsGroup],
+    with_details_only: bool = False,
 ) -> Dict[str, List[_reading.DetailedParticipantsGroup]]:
     sections = defaultdict(list)
     for participant_group in extracted_groups:
-        if participant_group.details:
+        if (not with_details_only) or participant_group.details:
             sections[participant_group.section_name].append(participant_group)
     return dict(sections)
 

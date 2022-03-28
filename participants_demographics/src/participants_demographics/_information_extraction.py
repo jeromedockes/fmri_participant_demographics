@@ -33,7 +33,6 @@ def annotate_labelbuddy_docs(documents):
         print(f"annotating doc {i}", end="\r", flush=True)
         doc = doc.copy()
         extracted = extractor.extract(doc["text"])
-        breakpoint()
         doc["utf8_text_md5_checksum"] = doc["meta"]["text_md5"]
         doc["labels"] = _participants_to_labels(extracted)
         del doc["short_title"]

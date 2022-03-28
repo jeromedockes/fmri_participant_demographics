@@ -1,27 +1,46 @@
 import pprint
 import json
 
+import numpy as np
 import pandas as pd
 from sklearn import metrics
+from sklearn import neighbors
+
 from matplotlib import pyplot as plt
 
 
 import utils
 
+EXCLUDED_IDX = np.arange(0, 20)
+
 
 def get_y(samples, extractor_name, remove_outliers):
     result = {}
     extracted_n = samples.loc[:, extractor_name]
+    annotated_n = samples.iloc[:, 0]
     if remove_outliers:
-        kept_y_true = annotated_n < annotated_n.quantile(0.9)
+        detector = neighbors.LocalOutlierFactor(n_neighbors=20)
+        kept_y_true = detector.fit_predict(annotated_n.values[:, None]) != -1
         kept = kept_y_true & extracted_n.notnull()
         result["n_annotations"] = int(kept_y_true.sum())
     else:
         kept = extracted_n.notnull()
         result["n_annotations"] = len(annotated_n)
+        print(
+            extractor_name,
+            np.percentile(annotated_n.values, 50),
+            np.percentile(extracted_n[kept].values, 50),
+        )
+
     result["n_detections"] = int(kept.sum())
     result["y_true"] = annotated_n[kept].values
     result["y_pred"] = extracted_n[kept].values
+    # print(
+    #     extractor_name,
+    #     np.mean(annotated_n.values),
+    #     np.mean(extracted_n[kept].values),
+    # )
+
     return result
 
 
@@ -44,9 +63,11 @@ def score_extraction(samples, extractor_name, remove_outliers):
 
 results_dir = utils.get_results_dir("n_participants")
 samples = pd.read_csv(results_dir.joinpath("n_participants.csv"), index_col=0)
+samples = samples.iloc[
+    sorted(set(range(samples.shape[0])).difference(EXCLUDED_IDX))
+]
 
 all_scores = {}
-annotated_n = samples.iloc[:, 0]
 for extractor_name in samples.columns[1:]:
     extractor_scores = {}
     for remove_outliers in (False, True):
@@ -74,6 +95,8 @@ for remove_outliers in (False, True):
         xy_max = max((xy_max, ax.get_xlim()[1], ax.get_ylim()[1]))
         ax.set_aspect(1.0)
     axes[0].set_xlim((xy_min, xy_max))
+    for ax in axes:
+        ax.plot([xy_min, xy_max], [xy_min, xy_max])
     fig.savefig(
         results_dir.joinpath(f"remove_outliers_{remove_outliers}.png"),
         bbox_inches="tight",
