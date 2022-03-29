@@ -12,10 +12,16 @@ def get_data_dir() -> Path:
     return Path(__file__).parents[1].joinpath("data")
 
 
-def get_results_dir(dir_name: str) -> Path:
-    results_dir = get_data_dir().joinpath("results", dir_name)
+def get_results_dir(*dir_names: str) -> Path:
+    results_dir = get_data_dir().joinpath("results", *dir_names)
     results_dir.mkdir(exist_ok=True, parents=True)
     return results_dir
+
+
+def get_demographics_file():
+    return get_results_dir("participants_demographics_data").joinpath(
+        "demographics.jsonl"
+    )
 
 
 def load_docs() -> Dict[int, Dict[str, Any]]:

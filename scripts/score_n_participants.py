@@ -21,26 +21,18 @@ def get_y(samples, extractor_name, remove_outliers):
     if remove_outliers:
         detector = neighbors.LocalOutlierFactor(n_neighbors=20)
         kept_y_true = detector.fit_predict(annotated_n.values[:, None]) != -1
+        true_median = np.percentile(annotated_n[kept_y_true].values, 50)
         kept = kept_y_true & extracted_n.notnull()
         result["n_annotations"] = int(kept_y_true.sum())
     else:
         kept = extracted_n.notnull()
         result["n_annotations"] = len(annotated_n)
-        print(
-            extractor_name,
-            np.percentile(annotated_n.values, 50),
-            np.percentile(extracted_n[kept].values, 50),
-        )
-
+        true_median = np.percentile(annotated_n.values, 50)
     result["n_detections"] = int(kept.sum())
     result["y_true"] = annotated_n[kept].values
     result["y_pred"] = extracted_n[kept].values
-    # print(
-    #     extractor_name,
-    #     np.mean(annotated_n.values),
-    #     np.mean(extracted_n[kept].values),
-    # )
-
+    result["true_median"] = true_median
+    result["estimated_median"] = np.percentile(extracted_n[kept].values, 50)
     return result
 
 
@@ -49,6 +41,8 @@ def score_extraction(samples, extractor_name, remove_outliers):
     y = get_y(samples, extractor_name, remove_outliers)
     scores["n_detections"] = y["n_detections"]
     scores["n_annotations"] = y["n_annotations"]
+    scores["true_median"] = y["true_median"]
+    scores["estimated_median"] = y["estimated_median"]
     for metric_name in (
         "r2_score",
         "mean_absolute_error",
