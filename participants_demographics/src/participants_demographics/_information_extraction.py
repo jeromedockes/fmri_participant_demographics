@@ -33,65 +33,67 @@ def annotate_labelbuddy_docs(documents):
         print(f"annotating doc {i}", end="\r", flush=True)
         doc = doc.copy()
         extracted = extractor.extract(doc["text"])
-        doc["utf8_text_md5_checksum"] = doc["meta"]["text_md5"]
-        doc["labels"] = _participants_to_labels(extracted)
-        del doc["short_title"]
-        del doc["long_title"]
+        doc["utf8_text_md5_checksum"] = doc["metadata"]["text_md5"]
+        doc["annotations"] = _participants_to_annotations(extracted)
+        del doc["display_title"]
+        del doc["list_title"]
         del doc["text"]
         yield doc
     print()
 
 
-def _participants_to_labels(participants_info):
-    labels = []
+def _participants_to_annotations(participants_info):
+    annotations = []
     if participants_info.count is not None:
-        labels.append(
-            (
-                0,
-                1,
-                participants_info.__class__.__name__,
-                str(participants_info),
-            )
+        annotations.append(
+            {
+                "start_char": 0,
+                "end_char": 1,
+                "label_name": participants_info.__class__.__name__,
+                "extra_data": str(participants_info),
+            }
         )
     for group in participants_info.groups:
-        labels.extend(_labels_from_group(group))
-    _extend_labels(
-        participants_info.discarded_group_mentions, "_Discarded", labels
+        annotations.extend(_annotations_from_group(group))
+    _extend_annotations(
+        participants_info.discarded_group_mentions, "_Discarded", annotations
     )
-    return labels
+    return annotations
 
 
-def _labels_from_group(group):
-    labels = []
+def _annotations_from_group(group):
+    annotations = []
     anchor = group.mentions[0]
-    labels.append(
-        (
-            anchor.abs_start_pos,
-            anchor.abs_end_pos,
-            group.__class__.__name__,
-            str(group),
-        )
+    annotations.append(
+        {
+            "start_char": anchor.abs_start_pos,
+            "end_char": anchor.abs_end_pos,
+            "label_name": group.__class__.__name__,
+            "extra_data": str(group),
+        }
     )
-    _extend_labels(anchor.details, None, labels)
-    _extend_labels(group.mentions[1:], "_Mention", labels)
-    return labels
+    _extend_annotations(anchor.details, None, annotations)
+    _extend_annotations(group.mentions[1:], "_Mention", annotations)
+    return annotations
 
 
-def _extend_labels(nodes_to_add, kind, labels):
+def _extend_annotations(nodes_to_add, kind, annotations):
     for node in nodes_to_add:
-        labels.append(
-            (
-                node.abs_start_pos,
-                node.abs_end_pos,
-                node.__class__.__name__ if kind is None else kind,
-                str(node),
-            )
+        annotations.append(
+            {
+                "start_char": node.abs_start_pos,
+                "end_char": node.abs_end_pos,
+                "label_name": node.__class__.__name__
+                if kind is None
+                else kind,
+                "extra_data": str(node),
+            }
         )
         if hasattr(node, "details"):
-            _extend_labels(
+            _extend_annotations(
                 node.details,
                 kind,
-                labels,
+                annotations,
             )
 
 

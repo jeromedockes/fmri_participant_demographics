@@ -4,7 +4,7 @@ from scanning_horizon import _get_ns_sample_sizes
 def n_participants_from_labelbuddy_docs(documents):
     texts = []
     for doc in documents:
-        abs_start, abs_end = doc["meta"]["field_positions"]["abstract"]
+        abs_start, abs_end = doc["metadata"]["field_positions"]["abstract"]
         texts.append(doc["text"][abs_start:abs_end])
     return n_participants_from_texts(texts)
 

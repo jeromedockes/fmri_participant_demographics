@@ -32,7 +32,7 @@ def load_docs() -> Dict[int, Dict[str, Any]]:
     with open(docs_file, encoding="utf-8") as docs_f:
         for doc_json in docs_f:
             doc = json.loads(doc_json)
-            all_docs[doc["meta"]["pmcid"]] = doc
+            all_docs[doc["metadata"]["pmcid"]] = doc
     return all_docs
 
 
@@ -42,7 +42,7 @@ def load_annotations(annotations_file_name) -> Dict[int, Dict[str, Any]]:
         "annotations", annotations_file_name
     )
     for doc in json.loads(annotations_file.read_text("utf-8")):
-        all_annotations[doc["meta"]["pmcid"]] = doc
+        all_annotations[doc["metadata"]["pmcid"]] = doc
     return all_annotations
 
 
@@ -52,20 +52,21 @@ def n_participants_from_annotations(
 ) -> Dict[int, int]:
     annotated_n = {}
     for pmcid, doc in annotations.items():
-        all_labels = defaultdict(list)
-        for label in doc["labels"]:
-            all_labels[label[2]].append(label)
-        total_n_labels = (
-            all_labels["N included"]
-            if "N included" in all_labels
-            else all_labels["N participants"]
+        all_annotations = defaultdict(list)
+        for annotation in doc["annotations"]:
+            all_annotations[annotation["label_name"]].append(annotation)
+        total_n_annotations = (
+            all_annotations["N included"]
+            if "N included" in all_annotations
+            else all_annotations["N participants"]
         )
-        if len(total_n_labels) != 1:
+        if len(total_n_annotations) != 1:
             annotated_n[pmcid] = None
-        elif len(total_n_labels[0]) == 4:
-            annotated_n[pmcid] = int(total_n_labels[0][-1])
+        elif "extra_data" in total_n_annotations[0]:
+            annotated_n[pmcid] = int(total_n_annotations[0]["extra_data"])
         else:
-            start, stop, _ = total_n_labels[0]
-            text = documents[pmcid]["text"][start:stop]
+            start = total_n_annotations[0]["start_char"]
+            end = total_n_annotations[0]["end_char"]
+            text = documents[pmcid]["text"][start:end]
             annotated_n[pmcid] = int(text)
     return annotated_n
