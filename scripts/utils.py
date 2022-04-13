@@ -23,6 +23,12 @@ def get_demographics_file():
         "demographics.jsonl"
     )
 
+def get_nqdc_data_dir() -> Path:
+    data_dir = os.environ.get("PARTICIPANTS_DEMOGRAPHICS_NQDC_DATA_DIR")
+    if data_dir is not None:
+        return Path(data_dir)
+    return get_data_dir().joinpath("nqdc_data")
+
 
 def load_docs() -> Dict[int, Dict[str, Any]]:
     all_docs = {}

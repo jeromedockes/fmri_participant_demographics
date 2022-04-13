@@ -1,3 +1,5 @@
+data/nqdc_data
+data/results/
 *.labelbuddy
 doc_build/
 profile.svg

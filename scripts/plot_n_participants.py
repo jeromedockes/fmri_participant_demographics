@@ -1,5 +1,4 @@
 import json
-import argparse
 
 import numpy as np
 import pandas as pd
@@ -60,11 +59,9 @@ def plot_total(metadata, plots_dir):
     )
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("articles_metadata_csv")
-args = parser.parse_args()
-
-metadata = pd.read_csv(args.articles_metadata_csv, index_col="pmcid")
+metadata = pd.read_csv(
+    utils.get_nqdc_data_dir().joinpath("metadata.csv"), index_col="pmcid"
+)
 
 demographics = []
 with open(utils.get_demographics_file(), encoding="utf8") as demo_f:
