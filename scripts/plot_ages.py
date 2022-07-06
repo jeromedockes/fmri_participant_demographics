@@ -33,12 +33,14 @@ sns.kdeplot(
     common_norm=False,
 )
 ax.set_xlabel("Mean age in group of participants")
-fig.savefig(
-    plots_dir.joinpath("ages_distrib_detailed.pdf"), bbox_inches="tight"
-)
+for ext in "pdf", "png":
+    fig.savefig(
+        plots_dir.joinpath(f"ages_distrib_detailed.{ext}"), bbox_inches="tight"
+    )
 
 
 fig, ax = plt.subplots()
 sns.histplot(x=age_means, ax=ax, kde=True, stat="probability")
 ax.set_xlabel("Mean age of study participants")
-fig.savefig(plots_dir.joinpath("ages_distrib.pdf"), bbox_inches="tight")
+for ext in "pdf", "png":
+    fig.savefig(plots_dir.joinpath(f"ages_distrib.{ext}"), bbox_inches="tight")

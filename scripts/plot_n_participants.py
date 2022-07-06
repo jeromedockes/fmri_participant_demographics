@@ -36,9 +36,11 @@ def plot_subpops(metadata, plots_dir):
     ax.legend(handles=handles, labels=labels, loc="upper left")
     ax.set_xlabel("Publication year")
     ax.set_ylabel("Median participant count")
-    fig.savefig(
-        plots_dir.joinpath("n_participants_detail.pdf"), bbox_inches="tight"
-    )
+    for ext in "pdf", "png":
+        fig.savefig(
+            plots_dir.joinpath(f"n_participants_detail.{ext}"),
+            bbox_inches="tight",
+        )
 
 
 def plot_total(metadata, plots_dir):
@@ -54,9 +56,11 @@ def plot_total(metadata, plots_dir):
     )
     ax.set_xlabel("Publication year")
     ax.set_ylabel("Median participant count")
-    fig.savefig(
-        plots_dir.joinpath("n_participants_total.pdf"), bbox_inches="tight"
-    )
+    for ext in "pdf", "png":
+        fig.savefig(
+            plots_dir.joinpath(f"n_participants_total.{ext}"),
+            bbox_inches="tight",
+        )
 
 
 metadata = pd.read_csv(
