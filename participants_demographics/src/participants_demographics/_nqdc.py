@@ -44,7 +44,7 @@ class DemographicsStep:
         return extract_from_nqdc_data(previous_steps_output["extract_data"])
 
 
-class StandaloneDemographicsStep:
+class DemographicsCommand:
     name = _STEP_NAME
     short_description = _STEP_DESCRIPTION
 
@@ -56,12 +56,12 @@ class StandaloneDemographicsStep:
             "with 'extractedData'.",
         )
 
-    def run(self, args, previous_steps_output):
-        return extract_from_nqdc_data(args.extracted_data_dir)
+    def run(self, args):
+        return extract_from_nqdc_data(args.extracted_data_dir)[1]
 
 
-def get_nqdc_processing_steps():
+def get_nqdc_actions():
     return {
         "pipeline_steps": [DemographicsStep()],
-        "standalone_steps": [StandaloneDemographicsStep()],
+        "commands": [DemographicsCommand()],
     }
