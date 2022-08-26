@@ -63,35 +63,7 @@ def plot_total(metadata, plots_dir):
         )
 
 
-metadata = pd.read_csv(
-    utils.get_nqdc_data_dir().joinpath("metadata.csv"), index_col="pmcid"
-)
-
-demographics = []
-with open(utils.get_demographics_file(), encoding="utf8") as demo_f:
-    for article_json in demo_f:
-        article_info = json.loads(article_json)
-        article_demographics = {}
-        for key in ["count", "females_count", "males_count"]:
-            article_demographics[key] = article_info["demographics"][key]
-        demographics.append(article_demographics)
-
-metadata = pd.concat(
-    [metadata, pd.DataFrame(demographics, index=metadata.index)], axis=1
-)
-metadata = metadata.dropna(subset="count")
-
-year_counts = (
-    metadata["publication_year"].groupby(metadata["publication_year"]).count()
-)
-good_years = year_counts[year_counts > MIN_PAPERS].index
-metadata = metadata[
-    (metadata["publication_year"] >= good_years.values.min())
-    & (metadata["publication_year"] <= good_years.values.max())
-]
-metadata["publication_year"] = pd.to_datetime(
-    pd.DataFrame({"year": metadata["publication_year"], "month": 1, "day": 1})
-)
+metadata = utils.load_n_participants(MIN_PAPERS)
 print("Median N participants:")
 print(metadata["count"].groupby(metadata["publication_year"]).median())
 print("\nN papers:")

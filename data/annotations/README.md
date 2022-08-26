@@ -1,0 +1,4 @@
+- `neurosynth_study_data.txt` and `david_sampsizedata.txt` were downloaded from [the paper's repo](https://raw.githubusercontent.com/poldracklab/ScanningTheHorizon/master/SampleSize/).
+  - neurosynth is from neurosynth abstracts then manually curated
+  - david is from the David & al. paper
+- `jerome_n_participants.json` was created by manually annotating documents.
