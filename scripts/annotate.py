@@ -1,3 +1,7 @@
+"""Generate automatic annotations of sample sizes & demographics.
+
+Store in labelbuddy format.
+"""
 import json
 
 import participants_demographics

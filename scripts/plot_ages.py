@@ -1,3 +1,4 @@
+"""Plot age distribution of all participants and by category (patients/controls)."""
 import json
 
 from matplotlib import pyplot as plt

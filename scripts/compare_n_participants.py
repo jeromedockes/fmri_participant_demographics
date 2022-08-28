@@ -1,3 +1,10 @@
+"""Plot median number of participants through time from multiple sources.
+
+The plot shows the median for each year from 3 sources:
+- David & al annotations distributed in https://github.com/poldracklab/ScanningTheHorizon
+- Annotations of NeuroSynth abstracts distributed in https://github.com/poldracklab/ScanningTheHorizon
+- Sample sizes automatically extracted from nqdc data.
+"""
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
@@ -11,8 +18,10 @@ DAVID_NAME = "Poldrack & al. / David & al."
 NQDC_NAME = "nqdc"
 
 demographics_data = utils.load_n_participants(MIN_PAPERS).loc[
-    :, ["publication_year", "count"]
+    :, ["publication_year", "count", "n_groups"]
 ]
+# restrict to single-group studies
+demographics_data = demographics_data[demographics_data["n_groups"] == 1]
 demographics_data["Data source"] = NQDC_NAME
 neurosynth_data = utils.load_neurosynth_sample_sizes().loc[
     :, ["publication_year", "count"]

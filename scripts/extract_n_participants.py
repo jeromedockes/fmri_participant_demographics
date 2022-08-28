@@ -1,3 +1,10 @@
+"""Extract number of participants from several sources and store in csv.
+
+Get sample size from
+- manual annotations
+- Poldrack & al extractor
+- `participants_demographics` extractor.
+"""
 import pandas as pd
 
 import participants_demographics

@@ -1,7 +1,9 @@
-import json
+"""Plot median N participants through time, based on the nqdc-extracted data.
 
+Plots for all subjects and separately for males and females.
+See `compare_n_participants.py` for a plot combining this with Poldrack & al data.
+"""
 import numpy as np
-import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 

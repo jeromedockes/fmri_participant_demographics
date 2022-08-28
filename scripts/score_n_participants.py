@@ -1,3 +1,4 @@
+"""Evaluate sample size extraction."""
 import pprint
 import json
 
