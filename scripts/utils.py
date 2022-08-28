@@ -10,6 +10,7 @@ import pandas as pd
 
 TAB10_COLORS = [cm.tab10(i) for i in range(10)]
 
+
 def get_data_dir() -> Path:
     data_dir = os.environ.get("PARTICIPANTS_DEMOGRAPHICS_DATA_DIR")
     if data_dir is not None:
@@ -96,6 +97,13 @@ def load_n_participants(min_papers_per_year: int) -> pd.DataFrame:
             article_demographics = {}
             for key in ["count", "females_count", "males_count"]:
                 article_demographics[key] = article_info["demographics"][key]
+            article_demographics["n_groups"] = max(
+                1, len(article_info["demographics"]["groups"])
+            )
+            for group in article_info["demographics"]["groups"]:
+                article_demographics[
+                    f"{group['participant_type'].lower()}_count"
+                ] = group["count"]
             demographics.append(article_demographics)
 
     metadata = pd.concat(
