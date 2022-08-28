@@ -11,6 +11,7 @@ import pandas as pd
 import utils
 
 data = utils.load_n_participants(0)
+print(f"n papers: {data.shape[0]}")
 n_papers_large_sample = (
     data[data["count"] > 100].groupby("publication_year")["count"].count()
 )

@@ -37,6 +37,17 @@ def get_nqdc_data_dir() -> Path:
     return get_data_dir().joinpath("nqdc_data")
 
 
+def load_all_docs():
+    data_dir = get_nqdc_data_dir().joinpath(
+        "subset_articlesWithCoords_labelbuddyData"
+    )
+    for docs_file in sorted(data_dir.glob("doc*.jsonl")):
+        with open(docs_file, encoding="utf-8") as docs_f:
+            for doc_json in docs_f:
+                doc = json.loads(doc_json)
+                yield doc
+
+
 def load_docs() -> Dict[int, Dict[str, Any]]:
     all_docs = {}
     docs_file = get_data_dir().joinpath(
