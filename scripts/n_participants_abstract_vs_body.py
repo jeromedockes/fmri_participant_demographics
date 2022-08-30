@@ -14,7 +14,7 @@ annotated_docs = json.loads(
     pathlib.Path(annotated_docs_file).read_text("utf-8")
 )
 
-print(len(annotated_docs))
+print(f"Found {len(annotated_docs)} documents.")
 counts = []
 for doc_info in annotated_docs:
     annotations = doc_info["annotations"]
@@ -40,8 +40,22 @@ for doc_info in annotated_docs:
 
 
 df = pd.DataFrame(counts)
-print(df)
-sns.boxplot(data=df, x="count", y="in_abstract", orient="h")
-# sns.swarmplot(data=df, x="count", y="in_abstract", orient="h", color="k")
-print(df.groupby("in_abstract")["count"].median())
-plt.show()
+fig, ax = plt.subplots(figsize=(6, 2))
+sns.boxplot(data=df, x="count", y="in_abstract", orient="h", ax=ax)
+# sns.stripplot(data=df, x="count", y="in_abstract", orient="h", color="k")
+sample_size = df.groupby("in_abstract")["count"].median()
+ax.set_ylabel("")
+ax.set_xlabel("Sample size (N)")
+label_map = {
+    "False": f"N not in abstract\n(median = {sample_size[False]:.0f})",
+    "True": f"N in abstract\n(median = {sample_size[True]:.0f})",
+}
+ax.set_yticklabels(
+    [label_map[label.get_text()] for label in ax.get_yticklabels()]
+)
+
+plots_dir = utils.get_results_dir("participants_demographics_data", "plots")
+fig.savefig(
+    plots_dir.joinpath("n_participants_abstract_vs_body.pdf"),
+    bbox_inches="tight",
+)
