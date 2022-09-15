@@ -50,6 +50,7 @@ sns.lineplot(
 )
 ax.set_xlabel("Publication year")
 ax.set_ylabel("Median sample size")
+ax.legend(loc="upper left")
 
 plots_dir = utils.get_results_dir("participants_demographics_data", "plots")
 fig.savefig(
