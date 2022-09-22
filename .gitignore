@@ -1,5 +1,8 @@
 data/nqdc_data
-data/results/
+data/results/*
+!data/results/n_participants/
+data/results/n_participants/*
+!data/results/n_participants/n_participants_all_docs.csv
 *.labelbuddy
 doc_build/
 profile.svg
