@@ -30,15 +30,15 @@ def get_demographics_file():
     )
 
 
-def get_nqdc_data_dir() -> Path:
-    data_dir = os.environ.get("PARTICIPANTS_DEMOGRAPHICS_NQDC_DATA_DIR")
+def get_pubget_data_dir() -> Path:
+    data_dir = os.environ.get("PARTICIPANTS_DEMOGRAPHICS_PUBGET_DATA_DIR")
     if data_dir is not None:
         return Path(data_dir)
-    return get_data_dir().joinpath("nqdc_data")
+    return get_data_dir().joinpath("pubget_data")
 
 
 def load_all_docs():
-    data_dir = get_nqdc_data_dir().joinpath(
+    data_dir = get_pubget_data_dir().joinpath(
         "subset_articlesWithCoords_labelbuddyData"
     )
     for docs_file in sorted(data_dir.glob("doc*.jsonl")):
@@ -98,7 +98,7 @@ def n_participants_from_annotations(
 
 def load_n_participants(min_papers_per_year: int) -> pd.DataFrame:
     metadata = pd.read_csv(
-        get_nqdc_data_dir().joinpath("metadata.csv"), index_col="pmcid"
+        get_pubget_data_dir().joinpath("metadata.csv"), index_col="pmcid"
     )
 
     demographics = []

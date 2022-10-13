@@ -5,6 +5,6 @@ import utils
 
 
 extract_from_dataset(
-    utils.get_nqdc_data_dir().joinpath("text.csv"),
+    utils.get_pubget_data_dir().joinpath("text.csv"),
     utils.get_demographics_file(),
 )

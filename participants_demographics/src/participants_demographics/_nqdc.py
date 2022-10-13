@@ -8,7 +8,7 @@ _STEP_DESCRIPTION = (
 )
 
 
-def extract_from_nqdc_data(extracted_data_dir, output_dir=None):
+def extract_from_pubget_data(extracted_data_dir, output_dir=None):
     extracted_data_dir = Path(extracted_data_dir)
     if output_dir is None:
         output_dir = extracted_data_dir.with_name(
@@ -41,7 +41,7 @@ class DemographicsStep:
     def run(self, args, previous_steps_output):
         if not args.demographics:
             return None, 0
-        return extract_from_nqdc_data(previous_steps_output["extract_data"])
+        return extract_from_pubget_data(previous_steps_output["extract_data"])
 
 
 class DemographicsCommand:
@@ -52,15 +52,15 @@ class DemographicsCommand:
         argument_parser.add_argument(
             "extracted_data_dir",
             help="Directory containing extracted data CSV files."
-            "It is a directory created by nqdc whose name ends "
+            "It is a directory created by pubget whose name ends "
             "with 'extractedData'.",
         )
 
     def run(self, args):
-        return extract_from_nqdc_data(args.extracted_data_dir)[1]
+        return extract_from_pubget_data(args.extracted_data_dir)[1]
 
 
-def get_nqdc_actions():
+def get_pubget_actions():
     return {
         "pipeline_steps": [DemographicsStep()],
         "commands": [DemographicsCommand()],

@@ -1,4 +1,4 @@
-"""Plot median N participants through time, based on the nqdc-extracted data.
+"""Plot median N participants through time, based on the pubget-extracted data.
 
 Plots for all subjects and separately for males and females.
 See `compare_n_participants.py` for a plot combining this with Poldrack & al data.

@@ -1,4 +1,5 @@
 data/nqdc_data
+data/pubget_data
 data/results/*
 !data/results/n_participants/
 data/results/n_participants/*
@@ -114,4 +115,4 @@ venv.bak/
 .mypy_cache/
 
 
-!src/nqdc/_data/stylesheets/docbook/**/*
+!src/pubget/_data/stylesheets/docbook/**/*

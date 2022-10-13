@@ -3,7 +3,7 @@
 The plot shows the median for each year from 3 sources:
 - David & al annotations distributed in https://github.com/poldracklab/ScanningTheHorizon
 - Annotations of NeuroSynth abstracts distributed in https://github.com/poldracklab/ScanningTheHorizon
-- Sample sizes automatically extracted from nqdc data.
+- Sample sizes automatically extracted from pubget data.
 """
 import numpy as np
 import seaborn as sns
@@ -15,14 +15,14 @@ import utils
 MIN_PAPERS = 30
 NS_NAME = "Poldrack & al. / NeuroSynth"
 DAVID_NAME = "Poldrack & al. / David & al."
-NQDC_NAME = "nqdc"
+PUBGET_NAME = "pubget"
 
 demographics_data = utils.load_n_participants(MIN_PAPERS).loc[
     :, ["publication_year", "count", "n_groups"]
 ]
 # restrict to single-group studies
 demographics_data = demographics_data[demographics_data["n_groups"] == 1]
-demographics_data["Data source"] = NQDC_NAME
+demographics_data["Data source"] = PUBGET_NAME
 neurosynth_data = utils.load_neurosynth_sample_sizes().loc[
     :, ["publication_year", "count"]
 ]
@@ -42,7 +42,7 @@ sns.lineplot(
     x="publication_year",
     y="count",
     hue="Data source",
-    hue_order=(DAVID_NAME, NS_NAME, NQDC_NAME),
+    hue_order=(DAVID_NAME, NS_NAME, PUBGET_NAME),
     palette=np.asarray(utils.TAB10_COLORS[:3])[[2, 0, 1]],
     style="Data source",
     estimator=lambda x: np.percentile(x, percentile),
