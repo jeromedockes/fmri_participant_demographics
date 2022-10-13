@@ -1,0 +1,24 @@
+number: INT | text_number
+
+?text_number.1: hundred_text_number | dozen_text_number | TEEN_NAME | UNIT_NAME
+
+
+hundred_text_number.1: (dozen_text_number | UNIT_NAME) "hundred" [ "and" ] [ dozen_text_number | UNIT_NAME ]
+
+dozen_text_number.1: DOZEN_NAME [ UNIT_NAME ] | TEEN_NAME
+
+UNIT_NAME.1: "one"|"two"|"three"|"four"|"five"|"six"|"seven"|"eight"|"nine"
+
+TEEN_NAME.1: "ten"|"eleven"|"twelve"|"thirteen"|"fourteen"|"fifteen"
+    |"sixteen"|"seventeen"|"eighteen"|"nineteen"
+
+DOZEN_NAME.1: "twenty"|"thirty"|"forty"|"fifty"|"sixty"|"seventy"|"eighty"
+    |"ninety"
+
+
+WS: /\s+/
+PUNCT: /[^a-zA-Z0-9().]/
+
+%import common (INT, NUMBER)
+%ignore WS
+%ignore PUNCT

@@ -20,10 +20,12 @@ _PARTICIPANTS_NAME = (
 )
 
 
-def _get_parser(start: str, ambiguity: str) -> Lark:
+def _get_parser(
+    start: str, ambiguity: str, grammar: str = "participants_grammar"
+) -> Lark:
     grammar = (
         Path(__file__)
-        .parent.joinpath("_data", "participants_grammar.lark")
+        .parent.joinpath("_data", f"{grammar}.lark")
         .read_text("utf-8")
     )
     parser = Lark(
@@ -268,6 +270,11 @@ class ParticipantsTransformer(Transformer):
     def n_value(self, tree) -> NValue:
         lp, n, rp = tree
         return NValue(self.pos_offset, lp.start_pos, rp.end_pos, n.value)
+
+    def number(self, tree) -> Number:
+        return Number(
+            self.pos_offset, tree[0].start_pos, tree[0].end_pos, tree[0].value
+        )
 
     def hundred_text_number(self, tree) -> Number:
         hundred_part, rest = tree
