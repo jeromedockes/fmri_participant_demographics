@@ -32,7 +32,23 @@ _short_extra_text: (ADJ|_PARENTHESES|_WORD|_SINGLE_RPAREN)*
 
 n_value: LPAREN "n" "=" INT RPAREN
 
-?number: INT | text_number
+?number: INT
+  | text_number
+
+?text_number.1: hundred_text_number | dozen_text_number | TEEN_NAME | UNIT_NAME
+
+
+hundred_text_number.1: (dozen_text_number | UNIT_NAME) "hundred" [ "and" ] [ dozen_text_number | UNIT_NAME ]
+
+dozen_text_number.1: DOZEN_NAME [ UNIT_NAME ] | TEEN_NAME
+
+UNIT_NAME.1: "one"|"two"|"three"|"four"|"five"|"six"|"seven"|"eight"|"nine"
+
+TEEN_NAME.1: "ten"|"eleven"|"twelve"|"thirteen"|"fourteen"|"fifteen"
+    |"sixteen"|"seventeen"|"eighteen"|"nineteen"
+
+DOZEN_NAME.1: "twenty"|"thirty"|"forty"|"fifty"|"sixty"|"seventy"|"eighty"
+    |"ninety"
 
 PARTICIPANTS_NAME.1: "participants"|"subjects"|"controls"|"hcs"|"patients"
     |"volunteers" |"individuals"|"adults"|"children"|"adolescents"|"girls"|"boys"
@@ -56,7 +72,6 @@ RPAREN: ")"
 WS: /\s+/
 PUNCT: /[^a-zA-Z0-9().]/
 
-%import .numbers_grammar (text_number)
 %import common (INT, NUMBER)
 %ignore WS
 %ignore PUNCT
