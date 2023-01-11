@@ -1,11 +1,6 @@
 scripts/scratch/
-data/nqdc_data
-data/pubget_data
-data/results/*
-!data/results/n_participants/
-data/results/n_participants/*
-!data/results/n_participants/n_participants_all_docs.csv
-*.labelbuddy
+data/*
+!data/annotations
 doc_build/
 profile.svg
 flycheck__*
