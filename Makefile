@@ -16,5 +16,8 @@ $(figures_dir)/ages_distrib_detailed.pdf: scripts/plot_ages.py $(demographics_js
 $(demographics_json): scripts/extract_demographics.py
 	python3 $<
 
+$(extracted_n): scripts/extract_n_for_labelled_papers.py
+	python3 $<
+
 $(figures_dir)/extraction_scatterplot.pdf: scripts/plot_n_participants_scatter.py $(extracted_n)
 	python3 $<

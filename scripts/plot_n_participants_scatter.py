@@ -54,7 +54,7 @@ samples = pd.read_csv(
 )
 samples = samples.iloc[
     sorted(set(range(samples.shape[0])).difference(EXCLUDED_IDX))
-]
+].dropna(subset="annotations")
 
 all_scores = {}
 for extractor_name in samples.columns[1:]:
@@ -71,7 +71,8 @@ for ax, extractor_name in zip(axes, all_scores.keys()):
     y = get_y(samples, extractor_name)
     ax.set_title(
         f"{extractor_name}\n"
-        f"{y['n_detections']} / {y['n_annotations']} detections"
+        f"{y['n_detections']} / {y['n_annotations']} detections\n"
+        f"MAE: {all_scores[extractor_name]['mean_absolute_error']:.1f}"
     )
     ax.scatter(y["y_true"], y["y_pred"], alpha=0.3)
     xy_min = min((xy_min, ax.get_xlim()[0], ax.get_ylim()[0]))

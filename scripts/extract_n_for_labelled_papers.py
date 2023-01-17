@@ -7,14 +7,33 @@ Get sample size from
 """
 import pandas as pd
 
-from labelrepo import database
+from labelrepo import database, read_json, repo
 from pubextract import participants
 
 import scanning_horizon
 import utils
 
 
+docs = read_json(
+    repo.repo_root()
+    / "projects"
+    / "participant_demographics"
+    / "documents"
+    / "documents_00001.jsonl"
+)
+
+
 with database.get_database_connection() as con:
+    all_annotated_pmcids = set(
+        pd.read_sql(
+            """
+select pmcid from detailed_annotation where project='participant_demographics'
+""",
+            con,
+        )["pmcid"].values
+    )
+    docs = [d for d in docs if d["metadata"]["pmcid"] in all_annotated_pmcids]
+    pmcids = [d["metadata"]["pmcid"] for d in docs]
     annotations = pd.read_sql(
         """
 with participants
@@ -41,24 +60,14 @@ inner join counts on participants_n.pmcid = counts.pmcid where counts.k = 1;
 """,
         con,
         index_col="pmcid",
-    )
+    ).reindex(pmcids)
 samples = pd.DataFrame({"annotations": annotations["n"]})
 
-
-with database.get_database_connection() as con:
-    texts = pd.read_sql(
-        "select distinct pmcid, text from document inner join annotation "
-        "on annotation.doc_id = document.id "
-        "where project = 'participant_demographics'",
-        con,
-        index_col="pmcid",
-    )["text"]
-    texts = texts.loc[annotations.index.values]
 
 for extractor in (participants, scanning_horizon):
     print(extractor.__name__)
     extracted_n = pd.Series(
-        extractor.n_participants_from_texts(texts.values),
+        extractor.n_participants_from_labelbuddy_docs(docs),
         index=annotations.index,
     )
     samples[extractor.__name__] = extracted_n
