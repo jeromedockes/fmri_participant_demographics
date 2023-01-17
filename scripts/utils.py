@@ -27,12 +27,14 @@ def get_figures_dir():
     return figures_dir
 
 
+def get_outputs_dir():
+    outputs_dir = get_repo_data_dir() / "outputs"
+    outputs_dir.mkdir(exist_ok=True)
+    return outputs_dir
+
+
 def get_demographics_file():
-    demographics_data_dir = (
-        get_repo_data_dir() / "participant_demographics_data"
-    )
-    demographics_data_dir.mkdir(exist_ok=True)
-    return demographics_data_dir / "demographics.jsonl"
+    return get_outputs_dir() / "demographics.jsonl"
 
 
 def load_n_participants(min_papers_per_year: int) -> pd.DataFrame:

@@ -1,9 +1,20 @@
+demographics_json := data/outputs/demographics.jsonl
+extracted_n := data/outputs/n_participants.csv
+figures_dir := data/figures
+figures := $(figures_dir)/n_participants.pdf $(figures_dir)/ages_distrib_detailed.pdf $(figures_dir)/extraction_scatterplot.pdf
+
 .PHONY: all
 
-all: data/figures/n_participants.pdf
+all: $(figures)
 
-data/figures/n_participants.pdf: scripts/plot_n_participants.py data/participant_demographics_data/demographics.jsonl
+$(figures_dir)/n_participants.pdf: scripts/plot_n_participants.py $(demographics_json)
 	python3 $<
 
-data/participant_demographics_data/demographics.jsonl:
-	python3 scripts/extract_demographics.py $@
+$(figures_dir)/ages_distrib_detailed.pdf: scripts/plot_ages.py $(demographics_json)
+	python3 $<
+
+$(demographics_json): scripts/extract_demographics.py
+	python3 $<
+
+$(figures_dir)/extraction_scatterplot.pdf: scripts/plot_n_participants_scatter.py $(extracted_n)
+	python3 $<
