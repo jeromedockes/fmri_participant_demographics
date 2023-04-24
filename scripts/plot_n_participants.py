@@ -13,8 +13,8 @@ import pandas as pd
 import utils
 
 MIN_PAPERS = 30
-NS_NAME = "Poldrack & al. / NeuroSynth"
-DAVID_NAME = "Poldrack & al. / David & al."
+NS_NAME = "Poldrack / NeuroSynth"
+DAVID_NAME = "Poldrack / David"
 PUBGET_NAME = "pubget"
 
 demographics_data = utils.load_n_participants(MIN_PAPERS).loc[
@@ -35,7 +35,7 @@ data = pd.concat(
     [demographics_data, neurosynth_data, david_data], axis=0, ignore_index=True
 )
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(4,3))
 percentile = 50
 sns.lineplot(
     data=data,
@@ -50,7 +50,7 @@ sns.lineplot(
 )
 ax.set_xlabel("Publication year")
 ax.set_ylabel("Median sample size")
-ax.legend(loc="upper left")
+ax.legend(loc="upper left", frameon=False)
 
 output_file = utils.get_figures_dir() / "n_participants.pdf"
 fig.savefig(output_file, bbox_inches="tight")

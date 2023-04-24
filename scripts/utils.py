@@ -12,7 +12,7 @@ TAB10_COLORS = [cm.tab10(i) for i in range(10)]
 
 def get_pubget_data_dir():
     return (
-        datasets.get_project_document_sources("participant_demographics")[0]
+        datasets.get_project_datasets("participant_demographics")[0]
         / "subset_articlesWithCoords_extractedData"
     )
 
