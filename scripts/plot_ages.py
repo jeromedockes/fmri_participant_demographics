@@ -24,7 +24,7 @@ with open(utils.get_demographics_file(), encoding="utf-8") as demo_f:
 detailed_age_means = pd.DataFrame(detailed_age_means).dropna()
 
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(4,2))
 sns.kdeplot(
     data=detailed_age_means,
     x="age_mean",
@@ -34,6 +34,12 @@ sns.kdeplot(
 )
 
 ax.set_xlabel("Mean age in group of participants")
+ax.set_yticks([])
+xmin, xmax = ax.get_xlim()
+ax.set_xlim(0, xmax)
+sns.despine()
+sns.move_legend(ax, "upper right", frameon=False)
+# ax.legend(loc="upper right", frameon=False)
 
 out_dir = utils.get_figures_dir()
 fig.savefig(out_dir / f"ages_distrib_detailed.pdf", bbox_inches="tight")

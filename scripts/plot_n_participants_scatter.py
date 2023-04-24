@@ -78,7 +78,9 @@ for ax, extractor_name in zip(axes, all_scores.keys()):
     xy_min = min((xy_min, ax.get_xlim()[0], ax.get_ylim()[0]))
     xy_max = max((xy_max, ax.get_xlim()[1], ax.get_ylim()[1]))
     ax.set_aspect(1.0)
+    ax.set_xlabel("True participant count")
 axes[0].set_xlim((xy_min, xy_max))
+axes[0].set_ylabel("Extracted participant count")
 for ax in axes:
     ax.plot([xy_min, xy_max], [xy_min, xy_max])
 fig.savefig(
