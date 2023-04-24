@@ -1,0 +1,22 @@
+{
+    "pubextract.participants": {
+        "n_detections": 55,
+        "n_annotations": 89,
+        "true_median": 31.0,
+        "estimated_median": 28.0,
+        "r2_score": 0.7784989039785111,
+        "mean_absolute_error": 7.581818181818182,
+        "median_absolute_error": 0.0,
+        "mean_absolute_percentage_error": 0.09121082225604031
+    },
+    "scanning_horizon": {
+        "n_detections": 37,
+        "n_annotations": 89,
+        "true_median": 31.0,
+        "estimated_median": 34.0,
+        "r2_score": 0.657502850187298,
+        "mean_absolute_error": 16.56756756756757,
+        "median_absolute_error": 0.0,
+        "mean_absolute_percentage_error": 0.21619843126589755
+    }
+}

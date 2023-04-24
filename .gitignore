@@ -1,6 +1,7 @@
 scripts/scratch/
 data/*
 !data/annotations
+!data/outputs/
 doc_build/
 profile.svg
 flycheck__*
