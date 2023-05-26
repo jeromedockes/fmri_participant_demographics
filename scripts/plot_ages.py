@@ -17,19 +17,19 @@ with open(utils.get_demographics_file(), encoding="utf-8") as demo_f:
         for group in article_info["demographics"]["groups"]:
             detailed_age_means.append(
                 {
-                    "participant_type": group["participant_type"],
+                    "Participant type": group["participant_type"].capitalize(),
                     "age_mean": group["age_mean"],
                 }
             )
 detailed_age_means = pd.DataFrame(detailed_age_means).dropna()
 
 
-fig, ax = plt.subplots(figsize=(4,2))
+fig, ax = plt.subplots(figsize=(4,3))
 sns.kdeplot(
     data=detailed_age_means,
     x="age_mean",
     ax=ax,
-    hue="participant_type",
+    hue="Participant type",
     common_norm=False,
 )
 

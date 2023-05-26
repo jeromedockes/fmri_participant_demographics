@@ -13,8 +13,8 @@ import pandas as pd
 import utils
 
 MIN_PAPERS = 30
-NS_NAME = "Poldrack / NeuroSynth"
-DAVID_NAME = "Poldrack / David"
+NS_NAME = "Poldrack & al."
+DAVID_NAME = "David & al."
 PUBGET_NAME = "pubget"
 
 demographics_data = utils.load_n_participants(MIN_PAPERS).loc[
@@ -51,6 +51,8 @@ sns.lineplot(
 ax.set_xlabel("Publication year")
 ax.set_ylabel("Median sample size")
 ax.legend(loc="upper left", frameon=False)
+
+sns.despine()
 
 output_file = utils.get_figures_dir() / "n_participants.pdf"
 fig.savefig(output_file, bbox_inches="tight")
