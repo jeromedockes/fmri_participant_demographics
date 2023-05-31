@@ -15,7 +15,7 @@ import utils
 MIN_PAPERS = 30
 NS_NAME = "Poldrack & al. [2017]"
 DAVID_NAME = "David & al. [2013]"
-PUBGET_NAME = "pubget"
+PUBGET_NAME = "pubget [in 2022]"
 
 np.random.seed(0)
 
