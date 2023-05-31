@@ -13,9 +13,11 @@ import pandas as pd
 import utils
 
 MIN_PAPERS = 30
-NS_NAME = "Poldrack & al."
-DAVID_NAME = "David & al."
+NS_NAME = "Poldrack & al. [2017]"
+DAVID_NAME = "David & al. [2013]"
 PUBGET_NAME = "pubget"
+
+np.random.seed(0)
 
 demographics_data = utils.load_n_participants(MIN_PAPERS).loc[
     :, ["publication_year", "count", "n_groups"]
@@ -50,7 +52,8 @@ sns.lineplot(
 )
 ax.set_xlabel("Publication year")
 ax.set_ylabel("Median sample size")
-ax.legend(loc="upper left", frameon=False)
+# ax.legend(loc="upper left", frameon=False)
+sns.move_legend(ax, "upper left", frameon=False)
 
 sns.despine()
 
