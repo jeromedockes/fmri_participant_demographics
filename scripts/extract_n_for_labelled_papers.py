@@ -8,6 +8,9 @@ Get sample size from
 import pandas as pd
 
 from labelrepo import database, read_json, repo
+from labelrepo.projects.participant_demographics import (
+    get_participant_demographics,
+)
 from pubextract import participants
 
 import scanning_horizon
@@ -19,50 +22,28 @@ docs = read_json(
     / "projects"
     / "participant_demographics"
     / "documents"
-    / "documents_00001.jsonl"
+    / "01_documents_00001.jsonl"
 )
 
+pmcids = [d["metadata"]["pmcid"] for d in docs]
+participant_groups = get_participant_demographics()
+participant_groups = participant_groups[
+    participant_groups["project_name"] == "participant_demographics"
+]
+participant_groups = participant_groups[
+    participant_groups["annotator_name"] == "Jerome_Dockes"
+]
+all_annotated_pmcids = set(participant_groups["pmcid"].values)
+docs = [d for d in docs if d["metadata"]["pmcid"] in all_annotated_pmcids]
+pmcids = [d["metadata"]["pmcid"] for d in docs]
+# participant_groups = participant_groups[
+#     participant_groups["pmcid"].isin(pmcids)
+# ]
+annotations = participant_groups.groupby("pmcid")["count"].sum().reindex(pmcids)
 
-with database.get_database_connection() as con:
-    all_annotated_pmcids = set(
-        pd.read_sql(
-            """
-select pmcid from detailed_annotation where project='participant_demographics'
-""",
-            con,
-        )["pmcid"].values
-    )
-    docs = [d for d in docs if d["metadata"]["pmcid"] in all_annotated_pmcids]
-    pmcids = [d["metadata"]["pmcid"] for d in docs]
-    annotations = pd.read_sql(
-        """
-with participants
-as (select pmcid, label_name,
-coalesce(extra_data, selected_text) as n
-from detailed_annotation
-where project = 'participant_demographics'
-and label_name in ('N participants', 'N included')),
 
-participants_n_included
-as (select * from participants where label_name='N included'),
 
-participants_n
-as (select * from participants_n_included
-union all
-select * from participants
-where pmcid not in (select pmcid from participants_n_included)),
-
-counts as (select pmcid, count(*) as k from participants_n group by pmcid)
-
-select participants_n.pmcid as pmcid, cast(n as integer) as n
-from participants_n
-inner join counts on participants_n.pmcid = counts.pmcid where counts.k = 1;
-""",
-        con,
-        index_col="pmcid",
-    ).reindex(pmcids)
-samples = pd.DataFrame({"annotations": annotations["n"]})
-
+samples = pd.DataFrame({"annotations": annotations})
 
 for extractor in (participants, scanning_horizon):
     print(extractor.__name__)

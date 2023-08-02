@@ -37,6 +37,25 @@ def get_demographics_file():
     return get_outputs_dir() / "demographics.jsonl"
 
 
+def load_labelbuddy_docs():
+    data_dir = get_pubget_data_dir().parent.joinpath(
+        "subset_articlesWithCoords_labelbuddyData"
+    )
+    all_docs = []
+    for docs_file in sorted(data_dir.glob("doc*.jsonl")):
+        with open(docs_file, encoding="utf-8") as docs_f:
+            for doc_json in docs_f:
+                doc = json.loads(doc_json)
+                if "meta" in doc:
+                    doc["metadata"] = doc["meta"]
+                if "short_title" in doc:
+                    doc["display_title"] = doc["short_title"]
+                if "long_title" in doc:
+                    doc["list_title"] = doc["long_title"]
+                all_docs.append(doc)
+    return all_docs
+
+
 def load_n_participants(min_papers_per_year: int) -> pd.DataFrame:
     metadata = pd.read_csv(
         get_pubget_data_dir().joinpath("metadata.csv"), index_col="pmcid"

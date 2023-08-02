@@ -37,6 +37,12 @@ def score_extraction(samples, extractor_name):
     scores["n_annotations"] = y["n_annotations"]
     scores["true_median"] = y["true_median"]
     scores["estimated_median"] = y["estimated_median"]
+    scores["n_errors"] = int((y["y_true"] != y["y_pred"]).sum())
+    abs_errors = np.abs(y["y_true"] - y["y_pred"]) / y["y_true"]
+    percentile_90_abs_error = np.percentile(abs_errors, 90)
+    scores["percentile_90_abs_error"] = percentile_90_abs_error
+    percentile_80_abs_error = np.percentile(abs_errors, 80)
+    scores["percentile_80_abs_error"] = percentile_80_abs_error
     for metric_name in (
         "r2_score",
         "mean_absolute_error",
@@ -52,6 +58,7 @@ def score_extraction(samples, extractor_name):
 samples = pd.read_csv(
     utils.get_outputs_dir() / "n_participants.csv", index_col=0
 )
+print(samples[samples["annotations"] >= 1000])
 samples = samples.iloc[
     sorted(set(range(samples.shape[0])).difference(EXCLUDED_IDX))
 ].dropna(subset="annotations")
@@ -72,7 +79,7 @@ for ax, extractor_name in zip(axes, all_scores.keys()):
     ax.set_title(
         f"{extractor_name}\n"
         f"{y['n_detections']} / {y['n_annotations']} detections\n"
-        f"MAE: {all_scores[extractor_name]['mean_absolute_error']:.1f}"
+        f"Median Absolute Error: {all_scores[extractor_name]['median_absolute_error']:.1f}"
     )
     ax.scatter(y["y_true"], y["y_pred"], alpha=0.3)
     xy_min = min((xy_min, ax.get_xlim()[0], ax.get_ylim()[0]))
