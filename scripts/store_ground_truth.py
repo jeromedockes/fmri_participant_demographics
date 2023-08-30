@@ -90,8 +90,26 @@ annotations = annotations[
     & (annotations["pmcid"].isin(pmcids))
 ].sort_values(by="pmcid")
 docs = docs.loc[pmcids].sort_values(by="pmcid")
+pmcids = docs.index.values
 
-
+papers = annotations.groupby("pmcid", sort=True)
+total_count = papers["count"].sum()
+assert (total_count.index == pmcids).all()
+average_count = papers["count"].mean()
+assert (average_count.index == pmcids).all()
+n_groups = papers["count"].count()
+assert (n_groups.index == pmcids).all()
+annotations_summary = pd.DataFrame(
+    {
+        "pmcid": docs.index.values,
+        "total_count": total_count,
+        "average_count": average_count,
+        "n_groups": n_groups,
+    }
+)
+annotations_summary.to_csv(
+    output_dir / "evaluation_labels_summaries.csv", index=False
+)
 annotations.to_csv(output_dir / "evaluation_labels.csv", index=False)
 docs.to_csv(output_dir / "evaluation_texts.csv", index=True)
 (output_dir / "evaluation_set_info.json").write_text(
