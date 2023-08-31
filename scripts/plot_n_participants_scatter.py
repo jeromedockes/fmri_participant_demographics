@@ -105,6 +105,7 @@ for extractor_name in samples.columns[1:]:
 (utils.get_outputs_dir() / "extraction_scores_nona.json").write_text(
     json.dumps(all_score_nona, indent=4), "utf-8"
 )
+print("Scores on intersection of all 3 approaches:")
 pprint.pprint(all_score_nona)
 
 fig, axes = plt.subplots(1, 3, sharex=True, sharey=True)

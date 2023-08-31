@@ -29,13 +29,13 @@
         "n_detections": 100,
         "n_annotations": 100,
         "true_median": 33.0,
-        "estimated_median": 21.0,
-        "n_errors": 64,
-        "percentile_90_abs_error": 0.5738131313131317,
-        "percentile_80_abs_error": 0.5,
-        "r2_score": 0.10343487378923732,
-        "mean_absolute_error": 29.500000000000004,
-        "median_absolute_error": 7.0,
-        "mean_absolute_percentage_error": 0.27262904366940766
+        "estimated_median": 33.0,
+        "n_errors": 37,
+        "percentile_90_abs_error": 0.46857142857142875,
+        "percentile_80_abs_error": 0.1810897435897436,
+        "r2_score": 0.1908893858714853,
+        "mean_absolute_error": 19.57,
+        "median_absolute_error": 0.0,
+        "mean_absolute_percentage_error": 0.1379256376201925
     }
 }
