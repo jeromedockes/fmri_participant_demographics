@@ -74,7 +74,18 @@ docs_full = read_json(
     / "01_documents_00001.jsonl"
 )
 docs = pd.DataFrame(
-    [{"pmcid": d["metadata"]["pmcid"], "text": d["text"]} for d in docs_full]
+    [
+        {
+            "pmcid": d["metadata"]["pmcid"],
+            "text": d["text"],
+            "abstract": d["text"][
+                d["metadata"]["field_positions"]["abstract"][0] : d[
+                    "metadata"
+                ]["field_positions"]["abstract"][1]
+            ],
+        }
+        for d in docs_full
+    ]
 ).set_index("pmcid")
 
 
