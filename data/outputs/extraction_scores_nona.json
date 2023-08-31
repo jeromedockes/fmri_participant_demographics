@@ -1,0 +1,41 @@
+{
+    "pubextract.participants": {
+        "n_detections": 27,
+        "n_annotations": 27,
+        "true_median": 38.0,
+        "estimated_median": 36.0,
+        "n_errors": 4,
+        "percentile_90_abs_error": 0.19111111111111143,
+        "percentile_80_abs_error": 0.0,
+        "r2_score": 0.8852910037667361,
+        "mean_absolute_error": 5.703703703703703,
+        "median_absolute_error": 0.0,
+        "mean_absolute_percentage_error": 0.06505899192742046
+    },
+    "scanning_horizon": {
+        "n_detections": 27,
+        "n_annotations": 27,
+        "true_median": 38.0,
+        "estimated_median": 33.0,
+        "n_errors": 9,
+        "percentile_90_abs_error": 0.5844444444444445,
+        "percentile_80_abs_error": 0.4146859903381643,
+        "r2_score": 0.6664926141724343,
+        "mean_absolute_error": 14.851851851851851,
+        "median_absolute_error": 0.0,
+        "mean_absolute_percentage_error": 0.1926739211763366
+    },
+    "gpt": {
+        "n_detections": 27,
+        "n_annotations": 27,
+        "true_median": 38.0,
+        "estimated_median": 40.0,
+        "n_errors": 7,
+        "percentile_90_abs_error": 0.32817204301075287,
+        "percentile_80_abs_error": 0.056582633053221296,
+        "r2_score": 0.7735204937809244,
+        "mean_absolute_error": 8.666666666666666,
+        "median_absolute_error": 0.0,
+        "mean_absolute_percentage_error": 0.11608890155871672
+    }
+}

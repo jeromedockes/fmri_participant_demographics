@@ -3,4 +3,5 @@ pandas
 matplotlib
 seaborn
 git+https://github.com/neurodatascience/pubextract.git
+git+https://github.com/adelavega/publang.git
 -e ./scanning_horizon
