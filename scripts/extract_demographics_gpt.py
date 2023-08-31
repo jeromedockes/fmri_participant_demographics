@@ -7,7 +7,7 @@ from labelrepo.database import get_database_connection
 import utils
 
 api_key = os.environ.get('OPENAI_API_KEY', None)
-MAX_TOKENS=2000
+MAX_TOKENS=4000
 
 ### Training documents
 # Load original annotations

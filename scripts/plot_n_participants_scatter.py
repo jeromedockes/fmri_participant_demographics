@@ -72,7 +72,7 @@ for extractor_name in samples.columns[1:]:
 )
 pprint.pprint(all_scores)
 
-fig, axes = plt.subplots(1, 2, sharex=True, sharey=True)
+fig, axes = plt.subplots(1, 3, sharex=True, sharey=True)
 xy_min, xy_max = 0, 0
 for ax, extractor_name in zip(axes, all_scores.keys()):
     y = get_y(samples, extractor_name)
