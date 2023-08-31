@@ -6,7 +6,7 @@ import utils
 # Load evaluation annotations
 annotations = pd.read_csv(utils.get_outputs_dir() / 'evaluation_labels.csv')
 predictions_gpt = pd.read_csv(utils.get_outputs_dir() / 'participant_demographics_gpt_tokens-2000.csv')
-predictions_gpt_4000 = pd.read_csv(utils.get_outputs_dir() / 'participant_demographics_gpt_tokens-4000.csv')
+# predictions_gpt_4000 = pd.read_csv(utils.get_outputs_dir() / 'participant_demographics_gpt_tokens-4000.csv')
 
 
 def _evaluate(annotations, predictions):
@@ -57,5 +57,5 @@ def _evaluate(annotations, predictions):
 print("Evaluate GPT with smaller chunk size (2000)")
 match_compare, res_mean, res_sums, counts = _evaluate(annotations, predictions_gpt)
 
-print("Evaluate GPT with smaller chunk size (4000)")
-match_compare, res_mean, res_sums, counts = _evaluate(annotations, predictions_gpt_4000)
+# print("Evaluate GPT with smaller chunk size (4000)")
+# match_compare, res_mean, res_sums, counts = _evaluate(annotations, predictions_gpt_4000)

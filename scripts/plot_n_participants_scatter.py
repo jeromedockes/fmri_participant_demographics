@@ -12,8 +12,9 @@ from matplotlib import pyplot as plt
 
 import utils
 
-EXCLUDED_IDX = np.arange(0, 20)
-
+EXCLUDED_IDX = json.loads(
+    (utils.get_repo_data_dir() / "training_pmcids.json").read_text("UTF-8")
+)["annotated_pmcids"]
 
 def get_y(samples, extractor_name):
     result = {}
@@ -59,9 +60,8 @@ samples = pd.read_csv(
     utils.get_outputs_dir() / "n_participants.csv", index_col=0
 )
 print(samples[samples["annotations"] >= 1000])
-samples = samples.iloc[
-    sorted(set(range(samples.shape[0])).difference(EXCLUDED_IDX))
-].dropna(subset="annotations")
+samples = samples.loc[list(set(samples.index) - set(EXCLUDED_IDX))].dropna(
+    subset="annotations")
 
 all_scores = {}
 for extractor_name in samples.columns[1:]:

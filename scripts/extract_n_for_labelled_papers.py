@@ -16,6 +16,7 @@ from pubextract import participants
 import scanning_horizon
 import utils
 
+# database.make_database()
 
 docs = read_json(
     repo.repo_root()
@@ -39,12 +40,12 @@ pmcids = [d["metadata"]["pmcid"] for d in docs]
 # participant_groups = participant_groups[
 #     participant_groups["pmcid"].isin(pmcids)
 # ]
+
 annotations = participant_groups.groupby("pmcid")["count"].sum().reindex(pmcids)
-
-
 
 samples = pd.DataFrame({"annotations": annotations})
 
+## For scanning participants give it the abstract
 for extractor in (participants, scanning_horizon):
     print(extractor.__name__)
     extracted_n = pd.Series(
@@ -55,15 +56,15 @@ for extractor in (participants, scanning_horizon):
 
 
 # Load extracted data from GPT
-training_predictions_path = utils.get_outputs_dir() / f'training_participant_demographics_gpt_tokens-2000.csv'
-if training_predictions_path.exists():
-    training_predictions = pd.read_csv(training_predictions_path)
-    training_predictions = training_predictions[training_predictions.pmcid.isin(pmcids)][['pmcid', 'count']]
-    training_predictions = training_predictions.groupby('pmcid').sum()
-    training_predictions = training_predictions.reindex(pmcids)
+predictions_path = utils.get_outputs_dir() / f'participant_demographics_gpt_tokens-2000.csv'
+if predictions_path.exists():
+    predictions = pd.read_csv(predictions_path)
+    predictions = predictions[predictions.pmcid.isin(pmcids)][['pmcid', 'count']]
+    predictions = predictions.groupby('pmcid').sum()
+    predictions = predictions.reindex(pmcids)
 
     extracted_n = pd.Series(
-        training_predictions['count'],
+        predictions['count'],
         index=annotations.index,
     )
     samples['gpt'] = extracted_n
