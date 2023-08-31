@@ -94,3 +94,38 @@ fig.savefig(
     utils.get_figures_dir() / ("extraction_scatterplot.pdf"),
     bbox_inches="tight",
 )
+
+# Calculate scores on interseciton between the 3 approaches
+samples_nona = samples.dropna()
+
+all_score_nona = {}
+for extractor_name in samples.columns[1:]:
+    all_score_nona[extractor_name] = score_extraction(samples_nona, extractor_name)
+
+(utils.get_outputs_dir() / "extraction_scores_nona.json").write_text(
+    json.dumps(all_score_nona, indent=4), "utf-8"
+)
+pprint.pprint(all_score_nona)
+
+fig, axes = plt.subplots(1, 3, sharex=True, sharey=True)
+xy_min, xy_max = 0, 0
+for ax, extractor_name in zip(axes, all_score_nona.keys()):
+    y = get_y(samples, extractor_name)
+    ax.set_title(
+        f"{extractor_name}\n"
+        f"{y['n_detections']} / {y['n_annotations']} detections\n"
+        f"Median Absolute Error: {all_score_nona[extractor_name]['median_absolute_error']:.1f}"
+    )
+    ax.scatter(y["y_true"], y["y_pred"], alpha=0.3)
+    xy_min = min((xy_min, ax.get_xlim()[0], ax.get_ylim()[0]))
+    xy_max = max((xy_max, ax.get_xlim()[1], ax.get_ylim()[1]))
+    ax.set_aspect(1.0)
+    ax.set_xlabel("True participant count")
+axes[0].set_xlim((xy_min, xy_max))
+axes[0].set_ylabel("Extracted participant count")
+for ax in axes:
+    ax.plot([xy_min, xy_max], [xy_min, xy_max])
+fig.savefig(
+    utils.get_figures_dir() / ("extraction_scatterplot_nona.pdf"),
+    bbox_inches="tight",
+)
