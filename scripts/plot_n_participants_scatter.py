@@ -99,7 +99,7 @@ fig.savefig(
 samples_nona = samples.dropna()
 
 all_score_nona = {}
-for extractor_name in samples.columns[1:]:
+for extractor_name in samples_nona.columns[1:]:
     all_score_nona[extractor_name] = score_extraction(samples_nona, extractor_name)
 
 (utils.get_outputs_dir() / "extraction_scores_nona.json").write_text(
@@ -111,7 +111,7 @@ pprint.pprint(all_score_nona)
 fig, axes = plt.subplots(1, 3, sharex=True, sharey=True)
 xy_min, xy_max = 0, 0
 for ax, extractor_name in zip(axes, all_score_nona.keys()):
-    y = get_y(samples, extractor_name)
+    y = get_y(samples_nona, extractor_name)
     ax.set_title(
         f"{extractor_name}\n"
         f"{y['n_detections']} / {y['n_annotations']} detections\n"
