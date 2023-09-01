@@ -20,4 +20,4 @@ predictions = extract_gpt_demographics(
     embeddings_path=embeddings_path
 )
 
-clean_gpt_demo_predictions(predictions).to_csv(index=False)
+clean_gpt_demo_predictions(predictions).to_csv(clean_predictions_path, index=False)
