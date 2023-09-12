@@ -1,13 +1,12 @@
 import pandas as pd
 import os
-from publang.pipelines import extract_gpt_demographics
+from publang.pipelines import extract_gpt_demographics, clean_gpt_demo_predictions
 from labelrepo.projects.participant_demographics import get_participant_demographics
 from labelrepo import database
 
 import utils
 
 api_key = os.environ.get('OPENAI_API_KEY', None)
-MAX_TOKENS=2000
 
 ### Training documents
 # Load original annotations
@@ -19,7 +18,7 @@ subset_cols = ['count', 'diagnosis', 'group_name', 'subgroup_name', 'male count'
        'age median', 'pmcid']
 jerome_pd_subset = jerome_pd[subset_cols].sort_values('pmcid')
 
-# database.make_database()
+database.make_database()
 
 # Load articles
 docs = pd.read_sql(
@@ -28,22 +27,16 @@ docs = pd.read_sql(
 )
 docs = docs[docs.pmcid.isin(jerome_pd.pmcid)].to_dict(orient='records')
 
+for n_tokens in [2000, 4000]:
 
-predictions_path = utils.get_outputs_dir() / f'participant_demographics_gpt_tokens-{MAX_TOKENS}.csv'
-embeddings_path = utils.get_outputs_dir() / f'embeddings_tokens-{MAX_TOKENS}.csv'
+    predictions_path = utils.get_outputs_dir() / f'eval_participant_demographics_gpt_tokens-{n_tokens}.csv'
+    clean_predictions_path = utils.get_outputs_dir() / f'eval_participant_demographics_gpt_tokens-{n_tokens}_clean.csv'
+    embeddings_path = utils.get_outputs_dir() / f'eval_embeddings_tokens-{n_tokens}.parquet'
 
-# Try to open each, if not set to None
-embeddings, predictions = None, None
-if os.path.exists(embeddings_path):
-    embeddings = pd.read_csv(embeddings_path)
-if os.path.exists(predictions_path):
-    predictions = pd.read_csv(predictions_path)
-
-if predictions is None:
     # Extract
-    predictions, embeddings = extract_gpt_demographics(
-        articles=docs, embeddings=embeddings, api_key=api_key, max_tokens=MAX_TOKENS, num_workers=10
+    predictions = extract_gpt_demographics(
+        articles=docs, output_path=predictions_path, api_key=api_key, max_tokens=n_tokens, num_workers=6,
+        embeddings_path=embeddings_path
     )
-    # Save predictions
-    predictions.to_csv(predictions_path, index=False)
-    embeddings.to_csv(embeddings_path, index=False)
+
+    clean_gpt_demo_predictions(predictions).to_csv(clean_predictions_path, index=False)
