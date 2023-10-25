@@ -8,6 +8,7 @@ import utils
 
 np.random.seed(0)
 
+# heuristic data
 demographics_file = utils.get_outputs_dir() / "n_participants_full_dataset.csv"
 heuristic_data = pd.read_csv(demographics_file).set_index("pmcid")
 heuristic_data["heuristic"] = heuristic_data["count"]
@@ -21,11 +22,9 @@ gpt_file = (
 gpt_data_original = pd.read_csv(gpt_file)
 gpt_data = pd.DataFrame(index=gpt_data_original["pmcid"].unique())
 # calculate total count for multi-group studies
-# (there is one row per group in the original data)
 for pmcid, group in gpt_data_original.groupby("pmcid"):
     gpt_data.loc[pmcid, "gpt"] = group["count"].sum()
     gpt_data.loc[pmcid, "n_groups"] = len(group)
-
 
 # ground truth
 truth_file = utils.get_outputs_dir() / "evaluation_labels.csv"
@@ -51,25 +50,25 @@ data = data_full.loc[:, ["heuristic", "gpt", "truth"]]
 data = data[data.index.isin(truth_data.index)]
 
 # evaluate results
-pe_guessed = len(data[data["heuristic"] > -1])/len(data) * 100
+hr_guessed = len(data[data["heuristic"] > -1])/len(data) * 100
 gpt_guessed = len(data[data["gpt"] > -1])/len(data) * 100
-print(f'\nheuristic made a guess in {pe_guessed} % of evaluation papers')
+print(f'\nheuristic made a guess in {hr_guessed} % of evaluation papers')
 print(f'GPT made a guess in {gpt_guessed} % of evaluation papers\n')
 
-pe_mape = np.nanmedian(np.abs(data.heuristic - data.truth) / data.truth) * 100
+hr_mape = np.nanmedian(np.abs(data.heuristic - data.truth) / data.truth) * 100
 gpt_mape = np.nanmedian(np.abs(data.gpt - data.truth) / data.truth) * 100
-print(f'heuristic MAPE: {pe_mape}')
+print(f'heuristic MAPE: {hr_mape}')
 print(f'GPT MAPE: {gpt_mape}\n')
 
-pe_mae = np.nanmedian(np.abs(data.heuristic - data.truth))
+hr_mae = np.nanmedian(np.abs(data.heuristic - data.truth))
 gpt_mae = np.nanmedian(np.abs(data.gpt - data.truth))
-print(f'heuristic MAE: {pe_mae}')
+print(f'heuristic MAE: {hr_mae}')
 print(f'GPT MAE: {gpt_mae}\n')
 
-pe_correct = len(data[data.heuristic == data.truth]) / len(data) * 100
+hr_correct = len(data[data.heuristic == data.truth]) / len(data) * 100
 gpt_correct = len(data[data.gpt == data.truth]) / len(data) * 100
-print(f'heuristic was correct in {pe_correct} % of all papers')
-print(f'GPT was correct in {gpt_correct} % of all papers\n')
+print(f'heuristic was correct in {hr_correct} % of evaluation papers')
+print(f'GPT was correct in {gpt_correct} % of evaluation papers\n')
 
 median_heuristic = data["heuristic"].median()
 median_gpt = data["gpt"].median()
@@ -136,5 +135,5 @@ plt.legend(loc="lower right")
 fig.tight_layout()
 fig.savefig(
     utils.get_figures_dir()
-    / "scatterplot_labels_vs_gpt_and_heuristic_multi_and_single_groups.pdf"
+    / "scatterplot_truth-vs-gpt-and-heuristic.pdf"
 )
