@@ -56,7 +56,7 @@ for extractor in (participants, scanning_horizon):
 
 
 # Load extracted data from GPT
-predictions_path = utils.get_outputs_dir() / f'participant_demographics_gpt_tokens-2000.csv'
+predictions_path = utils.get_outputs_dir() / f'eval_participant_demographics_gpt_tokens-2000.csv'
 if predictions_path.exists():
     predictions = pd.read_csv(predictions_path)
     predictions = predictions[predictions.pmcid.isin(pmcids)][['pmcid', 'count']]

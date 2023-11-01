@@ -18,7 +18,7 @@ subset_cols = ['count', 'diagnosis', 'group_name', 'subgroup_name', 'male count'
        'age median', 'pmcid']
 jerome_pd_subset = jerome_pd[subset_cols].sort_values('pmcid')
 
-database.make_database()
+# database.make_database()
 
 # Load articles
 docs = pd.read_sql(
@@ -27,11 +27,11 @@ docs = pd.read_sql(
 )
 docs = docs[docs.pmcid.isin(jerome_pd.pmcid)].to_dict(orient='records')
 
-for n_tokens in [2000, 4000]:
+for n_tokens in [2000]:
 
-    predictions_path = utils.get_outputs_dir() / f'eval_participant_demographics_gpt_tokens-{n_tokens}.csv'
-    clean_predictions_path = utils.get_outputs_dir() / f'eval_participant_demographics_gpt_tokens-{n_tokens}_clean.csv'
-    embeddings_path = utils.get_outputs_dir() / f'eval_embeddings_tokens-{n_tokens}.parquet'
+    predictions_path = utils.get_outputs_dir() / 'gpt' / f'eval_participant_demographics_gpt_tokens-{n_tokens}.csv'
+    clean_predictions_path = utils.get_outputs_dir() / 'gpt' / f'eval_participant_demographics_gpt_tokens-{n_tokens}_clean.csv'
+    embeddings_path = utils.get_outputs_dir() / 'gpt' / f'eval_embeddings_tokens-{n_tokens}.parquet'
 
     # Extract
     predictions = extract_gpt_demographics(
@@ -40,3 +40,4 @@ for n_tokens in [2000, 4000]:
     )
 
     clean_gpt_demo_predictions(predictions).to_csv(clean_predictions_path, index=False)
+    predictions.to_csv(predictions_path, index=False)

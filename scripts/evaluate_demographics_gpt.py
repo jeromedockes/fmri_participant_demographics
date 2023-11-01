@@ -5,8 +5,9 @@ import utils
 
 # Load evaluation annotations
 annotations = pd.read_csv(utils.get_outputs_dir() / 'evaluation_labels.csv')
-predictions_gpt = pd.read_csv(utils.get_outputs_dir() / 'participant_demographics_gpt_tokens-2000.csv')
-# predictions_gpt_4000 = pd.read_csv(utils.get_outputs_dir() / 'participant_demographics_gpt_tokens-4000.csv')
+predictions_gpt = pd.read_csv(utils.get_outputs_dir() / 'eval_participant_demographics_gpt_tokens-2000_clean.csv')
+
+predictions_gpt = predictions_gpt[predictions_gpt.pmcid.isin(annotations.pmcid.unique())]
 
 
 def _evaluate(annotations, predictions):

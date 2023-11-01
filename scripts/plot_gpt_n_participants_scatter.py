@@ -14,7 +14,7 @@ import utils
 
 # Load evaluation annotations
 annotations = pd.read_csv(utils.get_outputs_dir() / 'evaluation_labels.csv')
-predictions_gpt = pd.read_csv(utils.get_outputs_dir() / 'participant_demographics_gpt_tokens-2000.csv')
+predictions_gpt = pd.read_csv(utils.get_outputs_dir() / 'eval_participant_demographics_gpt_tokens-2000.csv')
 
 # Sum values for each pmcid
 
