@@ -10,9 +10,9 @@ with open(utils.get_repo_data_dir() / 'fmri_documents.jsonl', 'r') as f:
 MAX_TOKENS = 4000
 api_key = os.environ.get('OPENAI_API_KEY', None)
 
-predictions_path = utils.get_outputs_dir() / f'all_documents_participant_demographics_gpt_tokens-{MAX_TOKENS}.csv'
-clean_predictions_path = utils.get_outputs_dir() / f'all_documents_participant_demographics_gpt_tokens-{MAX_TOKENS}_clean.csv',
-embeddings_path = utils.get_outputs_dir() / f'all_documents_embeddings_tokens-{MAX_TOKENS}.parquet'
+predictions_path = utils.get_outputs_dir() / 'gpt' / f'all_participant_demographics_gpt_tokens-{MAX_TOKENS}.csv'
+clean_predictions_path = utils.get_outputs_dir() / 'gpt' / f'all_participant_demographics_gpt_tokens-{MAX_TOKENS}_clean.csv'
+embeddings_path = utils.get_outputs_dir() / 'gpt' / f'all_embeddings_tokens-{MAX_TOKENS}.parquet'
 
 # Extract
 predictions = extract_gpt_demographics(
@@ -20,4 +20,5 @@ predictions = extract_gpt_demographics(
     embeddings_path=embeddings_path
 )
 
+predictions.to_csv(predictions_path, index=False)
 clean_gpt_demo_predictions(predictions).to_csv(clean_predictions_path, index=False)

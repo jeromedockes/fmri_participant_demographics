@@ -1,0 +1,21 @@
+count,diagnosis,group_name,subgroup_name,male count,female count,age mean,age range,age minimum,age maximum,age median,rank,start_char,end_char,pmcid
+46,schizophrenia,patients,"drug-naive, first-episode schizophrenia",,,,18-37,18.0,37.0,,0,10028,12384,6197719
+46,unaffected siblings,healthy,unaffected siblings,,,,18-37,18.0,37.0,,0,10028,12384,6197719
+46,healthy controls,healthy,healthy controls,,,,18-37,18.0,37.0,,0,10028,12384,6197719
+13,right MCA territory infarction,patients,male,13.0,,,,,,,0,4472,5608,8154462
+11,healthy,healthy,male,11.0,,,,,,,0,4472,5608,8154462
+15,healthy,students,male,7.0,,23.8,,,,,0,5173,8811,5324609
+15,healthy,students,female,,8.0,,,,,,0,5173,8811,5324609
+23,DD,patients,DD,,,,8-11,8.0,11.0,,0,11527,14377,5758587
+12,TD,healthy,TD,,,,8-11,8.0,11.0,,0,11527,14377,5758587
+26,ASD,patients,ASD,,,,,,,,1,9309,10707,7194032
+28,Typically Developing,healthy,TD,,,,,,,,1,9309,10707,7194032
+12,cockroach phobia,patients,cockroach phobia,4.0,8.0,40.08,,,,,0,5977,7136,6220927
+12,no phobia,healthy,no phobia,4.0,8.0,24.08,,,,,0,5977,7136,6220927
+18,nAMD,patients,nAMD patients,9.0,9.0,,55 years old and above,55.0,,,1,16185,17940,8544331
+18,healthy,healthy,healthy controls,9.0,9.0,,,,,,1,16185,17940,8544331
+30,ADHD,patients,ADHD boys,30.0,,,10-17,10.0,17.0,,0,9065,12151,4190683
+30,healthy,healthy,healthy control boys,30.0,,,10-17,10.0,17.0,,0,9065,12151,4190683
+17,aMCI and mAD,patients,aMCI,4.0,7.0,,65-81,65.0,81.0,,1,6036,9501,7838677
+17,aMCI and mAD,patients,mAD,4.0,2.0,,65-81,65.0,81.0,,1,6036,9501,7838677
+28,healthy,healthy,,14.0,14.0,,55-81,55.0,81.0,,1,6036,9501,7838677

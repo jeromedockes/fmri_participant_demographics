@@ -27,16 +27,16 @@ docs = pd.read_sql(
 )
 docs = docs[docs.pmcid.isin(jerome_pd.pmcid)].to_dict(orient='records')
 
-for n_tokens in [2000]:
+for n_tokens in [2000, 4000]:
 
-    predictions_path = utils.get_outputs_dir() / 'gpt' / f'eval_participant_demographics_gpt_tokens-{n_tokens}.csv'
-    clean_predictions_path = utils.get_outputs_dir() / 'gpt' / f'eval_participant_demographics_gpt_tokens-{n_tokens}_clean.csv'
-    embeddings_path = utils.get_outputs_dir() / 'gpt' / f'eval_embeddings_tokens-{n_tokens}.parquet'
+    predictions_path = utils.get_outputs_dir() / 'gpt' / f'eval_participant_demographics_gpt4-1106_tokens-{n_tokens}.csv'
+    clean_predictions_path = utils.get_outputs_dir() / 'gpt' / f'eval_participant_demographics_gpt4-1106_tokens-{n_tokens}_clean.csv'
+    embeddings_path = utils.get_outputs_dir() / 'gpt' / f'eval_embeddings_tokens-{n_tokens}-1106.parquet'
 
     # Extract
     predictions = extract_gpt_demographics(
-        articles=docs, output_path=predictions_path, api_key=api_key, max_tokens=n_tokens, num_workers=6,
-        embeddings_path=embeddings_path
+        articles=docs[0:10], output_path=predictions_path, api_key=api_key, max_tokens=n_tokens, num_workers=1,
+        embeddings_path=embeddings_path, extraction_model_name='gpt-4-1106-preview'
     )
 
     clean_gpt_demo_predictions(predictions).to_csv(clean_predictions_path, index=False)

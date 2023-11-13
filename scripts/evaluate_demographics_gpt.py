@@ -3,9 +3,10 @@ import pandas as pd
 from publang.evaluate import score_columns, hungarian_match_compare 
 import utils
 
-# Load evaluation annotations
+# Load evaluation annotationsunique_ids = 
+
 annotations = pd.read_csv(utils.get_outputs_dir() / 'evaluation_labels.csv')
-predictions_gpt = pd.read_csv(utils.get_outputs_dir() / 'eval_participant_demographics_gpt_tokens-2000_clean.csv')
+predictions_gpt = pd.read_csv(utils.get_outputs_dir() / 'gpt' / 'eval_participant_demographics_gpt_tokens-2000_clean.csv')
 
 predictions_gpt = predictions_gpt[predictions_gpt.pmcid.isin(annotations.pmcid.unique())]
 
