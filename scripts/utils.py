@@ -119,3 +119,26 @@ def load_neurosynth_sample_sizes() -> pd.DataFrame:
 
 def load_david_sample_sizes() -> pd.DataFrame:
     return _load_scanning_horizon_sample_sizes("david_sampsizedata.txt")
+
+
+def load_gpt_sample_sizes() -> pd.DataFrame:
+    filepath = (
+        get_outputs_dir()
+        / "all_documents_participant_demographics_gpt_tokens-4000_clean.csv"
+    )
+    data = pd.read_csv(filepath)
+    # add the dates
+    metadata_path = (
+        pathlib.Path(__file__).resolve().parents[1] / "data" / "metadata.csv"
+    )
+    metadata = pd.read_csv(metadata_path)
+
+    for ind, row in data.iterrows():
+        pmcid = row["pmcid"]
+        year = metadata[metadata["pmcid"] == pmcid]["publication_year"].values[0]
+        data.loc[ind, "publication_year"] = int(year)
+        
+    data["publication_year"] = pd.to_datetime(
+        pd.DataFrame({"year": data["publication_year"], "month": 1, "day": 1})
+    )
+    return data
